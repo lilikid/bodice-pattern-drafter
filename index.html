@@ -11,14 +11,105 @@
       --accent-color: #2563eb;
       --accent-hover: #1d4ed8;
       --text-main: #1e293b;
+      --border-color: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
-      padding: 0;
       font-family: system-ui, -apple-system, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #sidebar {
+      width: 320px;
+      background: var(--panel-bg);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .sidebar-content {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    #canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: auto;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    svg#pattern-canvas {
+      background: white;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
 
     .pattern-grid-line { fill: none; stroke: #e2e8f0; stroke-width: 1; }
@@ -28,45 +119,120 @@
     .pattern-text { font-family: sans-serif; font-size: 10px; fill: #64748b; font-weight: 500; }
 
     @media print {
+      body {
+        display: block;
+        overflow: visible;
+      }
+      #sidebar {
+        display: none !important;
+      }
+      #canvas-container {
+        background: white;
+        overflow: visible;
+      }
       svg#pattern-canvas {
         width: 100% !important;
         height: auto !important;
+        box-shadow: none;
       }
     }
   </style>
 </head>
 <body>
 
-  <div id="svg-container" style="width: 100%; overflow: auto;">
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <h1>Pattern Measurements</h1>
+    </div>
+    <div class="sidebar-content">
+      <div class="input-group">
+        <label for="bust">Bust Circumference (cm)</label>
+        <input type="number" id="bust" value="88" oninput="drawPattern()">
+      </div>
+      <div class="input-group">
+        <label for="waist">Waist Circumference (cm)</label>
+        <input type="number" id="waist" value="68" oninput="drawPattern()">
+      </div>
+      <div class="input-group">
+        <label for="backLength">Back Length (cm)</label>
+        <input type="number" id="backLength" value="41" oninput="drawPattern()">
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-primary" onclick="exportSVG()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Export Pattern SVG
+      </button>
+    </div>
+  </div>
+
+  <div id="canvas-container">
     <svg id="pattern-canvas" width="100cm" height="80cm" viewBox="0 0 1000 800">
       <g id="viewport">
         <g id="pattern-layer">
-          <!-- 5cm x 5cm (50mm x 50mm) True-Scale Print Verification Box -->
+          <!-- 5cm x 5cm (50mm x 50mm) True-Scale Verification Box -->
           <rect x="10" y="10" width="50" height="50" fill="none" stroke="black" stroke-width="1"/>
+          <text x="15" y="30" font-size="8" fill="black">5cm Test Square</text>
         </g>
       </g>
     </svg>
   </div>
 
-  <div class="sidebar-footer">
-    <button class="btn-primary" onclick="exportSVG()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <polyline points="7 10 12 15 17 10"></polyline>
-        <line x1="12" y1="15" x2="12" y2="3"></line>
-      </svg>
-      Export Pattern SVG
-    </button>
-  </div>
-
 <script>
-  let isDragging = false;
+  function drawPattern() {
+    const bust = parseFloat(document.getElementById('bust').value) || 88;
+    const waist = parseFloat(document.getElementById('waist').value) || 68;
+    const backLength = parseFloat(document.getElementById('backLength').value) || 41;
 
-  function updateTransform() {
-    // Pan and zoom transform handling
+    // Convert cm inputs into canvas units (1 unit = 1 mm)
+    const bustMm = bust * 10;
+    const waistMm = waist * 10;
+    const backLengthMm = backLength * 10;
+
+    const layer = document.getElementById('pattern-layer');
+
+    // Retain the 5cm test square and clear previous pattern renderings
+    layer.innerHTML = `
+      <rect x="10" y="10" width="50" height="50" fill="none" stroke="black" stroke-width="1"/>
+      <text x="15" y="30" font-size="8" fill="black">5cm Test Square</text>
+    `;
+
+    // Calculated Pattern Dimensions (Quarter Grid)
+    const startX = 100;
+    const startY = 100;
+    const width = (bustMm / 4) + 20; // 20mm ease
+    const height = backLengthMm;
+
+    // Outer Bodice Box
+    const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    box.setAttribute("x", startX);
+    box.setAttribute("y", startY);
+    box.setAttribute("width", width);
+    box.setAttribute("height", height);
+    box.setAttribute("class", "pattern-main-line");
+    layer.appendChild(box);
+
+    // Waistline Marking
+    const waistLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    waistLine.setAttribute("x1", startX);
+    waistLine.setAttribute("y1", startY + height);
+    waistLine.setAttribute("x2", startX + width);
+    waistLine.setAttribute("y2", startY + height);
+    waistLine.setAttribute("class", "pattern-main-line");
+    layer.appendChild(waistLine);
+
+    // Labels
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", startX + 10);
+    label.setAttribute("y", startY + 20);
+    label.setAttribute("class", "pattern-text");
+    label.textContent = `Bodice Block - Bust: ${bust}cm | Waist: ${waist}cm`;
+    layer.appendChild(label);
   }
-
-  window.addEventListener('mouseup', () => isDragging = false);
 
   function exportSVG() {
     const svgData = document.getElementById('pattern-canvas').outerHTML;
@@ -80,11 +246,7 @@
     document.body.removeChild(downloadLink);
   }
 
-  function drawPattern() {
-    // Dynamic pattern drafting calculations go here
-  }
-
-  // Initial Load
+  // Initial render
   drawPattern();
 </script>
 </body>
