@@ -1,2 +1,794 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Bodice Pattern Drafter</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --panel-bg: #ffffff;
+            --accent-color: #2563eb;
+            --accent-hover: #1d4ed8;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --grid-line: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            width: 380px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.03);
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 12px;
+        }
+
+        .unit-toggle {
+            display: flex;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: 8px;
+            gap: 2px;
+        }
+
+        .unit-btn {
+            flex: 1;
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .unit-btn.active {
+            background: #ffffff;
+            color: var(--accent-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .form-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 12px;
+            margin-top: 8px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 8px 28px 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .input-unit {
+            position: absolute;
+            right: 10px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        /* Abbreviations Legend */
+        .abbrev-legend {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.78rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 12px;
+            color: var(--text-main);
+        }
+
+        .abbrev-item {
+            display: flex;
+            gap: 4px;
+        }
+
+        .abbrev-code {
+            font-weight: 700;
+            color: var(--accent-color);
+            min-width: 24px;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-group-print {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 8px 10px;
+            background: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Canvas Workspace */
+        #workspace {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-color);
+            overflow: hidden;
+        }
+
+        .canvas-toolbar {
+            height: 48px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .btn-icon:hover {
+            background: #f1f5f9;
+        }
+
+        #svg-container {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #svg-container:active {
+            cursor: grabbing;
+        }
+
+        /* Pattern SVG Styling */
+        .pattern-frame { fill: none; stroke: #cbd5e1; stroke-width: 1; stroke-dasharray: 4,4; }
+        .pattern-grid-line { fill: none; stroke: #e2e8f0; stroke-width: 1; }
+        .pattern-calc-dotted { fill: none; stroke: #2563eb; stroke-width: 1.5; stroke-dasharray: 3,3; }
+        .pattern-main-line { fill: none; stroke: #0f172a; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+        .pattern-dart-line { fill: none; stroke: #ef4444; stroke-width: 1.5; stroke-dasharray: 4,4; }
+        .pattern-point { fill: #2563eb; r: 3.5; }
+        .pattern-text { font-family: sans-serif; font-size: 10px; fill: #1e293b; font-weight: 600; }
+        .pattern-anno-text { font-family: sans-serif; font-size: 9px; fill: #2563eb; font-weight: 500; }
+
+        /* PRINT MEDIA STYLES - 100% Full-Scale 1:1 Printable Pages */
+        @media print {
+            @page {
+                margin: 0;
+            }
+            body {
+                background: white;
+                color: black;
+                overflow: visible;
+                display: block;
+            }
+            #sidebar, .canvas-toolbar {
+                display: none !important;
+            }
+            #workspace {
+                width: 100vw;
+                height: 100vh;
+                background: white;
+            }
+            #svg-container {
+                width: 100%;
+                height: 100%;
+            }
+            #pattern-canvas {
+                width: 100%;
+                height: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR CONTROLS -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <h1>Bodice Pattern Drafter</h1>
+            <div class="unit-toggle">
+                <button class="unit-btn active" id="btn-in" onclick="setUnit('in')">Inches (in)</button>
+                <button class="unit-btn" id="btn-cm" onclick="setUnit('cm')">Centimeters (cm)</button>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="form-section-title">Body Measurements</div>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="bust">Bust</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="bust" step="0.1" value="34.5" oninput="drawPattern()">
+                        <span class="input-unit">in</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="waist">Waist</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="waist" step="0.1" value="25.5" oninput="drawPattern()">
+                        <span class="input-unit">in</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="hips">Hips</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="hips" step="0.1" value="37.0" oninput="drawPattern()">
+                        <span class="input-unit">in</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="back_waist">Back Waist</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="back_waist" step="0.1" value="15.5" oninput="drawPattern()">
+                        <span class="input-unit">in</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="chest_width">Chest Width</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="chest_width" step="0.1" value="13.0" oninput="drawPattern()">
+                        <span class="input-unit">in</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="back_width">Back Width</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="back_width" step="0.1" value="14.0" oninput="drawPattern()">
+                        <span class="input-unit">in</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="shoulder">Shoulder</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="shoulder" step="0.1" value="5.0" oninput="drawPattern()">
+                        <span class="input-unit">in</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="waist_to_hip">Waist to Hip</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="waist_to_hip" step="0.1" value="8.0" oninput="drawPattern()">
+                        <span class="input-unit">in</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Point Abbreviations Reference Legend -->
+            <div class="form-section-title">Point Abbreviations Key</div>
+            <div class="abbrev-legend">
+                <div class="abbrev-item"><span class="abbrev-code">CB</span> <span>Centre Back</span></div>
+                <div class="abbrev-item"><span class="abbrev-code">CF</span> <span>Centre Front</span></div>
+                <div class="abbrev-item"><span class="abbrev-code">NP</span> <span>Neck Point</span></div>
+                <div class="abbrev-item"><span class="abbrev-code">SP</span> <span>Shoulder Point</span></div>
+                <div class="abbrev-item"><span class="abbrev-code">CP</span> <span>Chest Point</span></div>
+                <div class="abbrev-item"><span class="abbrev-code">UP</span> <span>Underarm Point</span></div>
+                <div class="abbrev-item"><span class="abbrev-code">BP</span> <span>Bust Point</span></div>
+                <div class="abbrev-item"><span class="abbrev-code">HP</span> <span>Hip Point</span></div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="btn-primary" onclick="exportSVG()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export Pattern SVG
+            </button>
+            <div class="btn-group-print">
+                <button class="btn-secondary" onclick="triggerPrint('A4')">
+                    🖨️ Print 1:1 (A4)
+                </button>
+                <button class="btn-secondary" onclick="triggerPrint('A3')">
+                    🖨️ Print 1:1 (A3)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN WORKSPACE -->
+    <div id="workspace">
+        <div class="canvas-toolbar">
+            <span style="font-size:0.85rem; color: var(--text-muted);">2D Pattern Canvas (1:1 Actual Scale Grid)</span>
+            <div class="zoom-controls">
+                <button class="btn-icon" onclick="zoom(0.8)">-</button>
+                <button class="btn-icon" onclick="resetZoom()">100%</button>
+                <button class="btn-icon" onclick="zoom(1.25)">+</button>
+            </div>
+        </div>
+
+        <div id="svg-container">
+            <svg id="pattern-canvas" width="100%" height="100%">
+                <defs>
+                    <!-- Unit Dynamic Background Grid Pattern -->
+                    <pattern id="grid-pattern" width="96" height="96" patternUnits="userSpaceOnUse">
+                        <path id="grid-path" d="M 96 0 L 0 0 0 96" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+                        <path id="subgrid-path" d="M 24 0 L 0 0 0 24" fill="none" stroke="#f1f5f9" stroke-width="0.5"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+                <g id="viewport">
+                    <g id="pattern-layer"></g>
+                </g>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        // Standard imperial / metric default values
+        const defaults = {
+            in: { bust: 34.5, waist: 25.5, hips: 37.0, back_waist: 15.5, chest_width: 13.0, back_width: 14.0, shoulder: 5.0, waist_to_hip: 8.0 },
+            cm: { bust: 88.0, waist: 65.0, hips: 94.0, back_waist: 39.0, chest_width: 33.0, back_width: 35.0, shoulder: 12.5, waist_to_hip: 21.0 }
+        };
+
+        let currentUnit = 'in';
+        let dpi = 96; // Standard Screen CSS Pixels per Inch
+        let scale = 96; // 1 Inch = 96px in 1:1 actual printing scale
+        let panX = 100, panY = 60;
+        let isDragging = false, startX, startY;
+
+        function setUnit(unit) {
+            if (currentUnit === unit) return;
+            currentUnit = unit;
+            
+            document.getElementById('btn-in').classList.toggle('active', unit === 'in');
+            document.getElementById('btn-cm').classList.toggle('active', unit === 'cm');
+            document.querySelectorAll('.input-unit').forEach(el => el.textContent = unit);
+
+            // Populate default values
+            Object.keys(defaults[unit]).forEach(key => {
+                document.getElementById(key).value = defaults[unit][key];
+            });
+
+            // Set grid scale (1 inch = 96px, 1 cm = 37.795px)
+            scale = unit === 'in' ? 96 : 37.795;
+            updateGridPattern();
+            drawPattern();
+        }
+
+        function updateGridPattern() {
+            const gridPattern = document.getElementById('grid-pattern');
+            const gridPath = document.getElementById('grid-path');
+            const subgridPath = document.getElementById('subgrid-path');
+
+            if (currentUnit === 'in') {
+                gridPattern.setAttribute('width', '96');
+                gridPattern.setAttribute('height', '96');
+                gridPath.setAttribute('d', 'M 96 0 L 0 0 0 96');
+                subgridPath.setAttribute('d', 'M 24 0 L 0 0 0 24');
+            } else {
+                const cmPx = 37.795;
+                gridPattern.setAttribute('width', cmPx.toString());
+                gridPattern.setAttribute('height', cmPx.toString());
+                gridPath.setAttribute('d', `M ${cmPx} 0 L 0 0 0 ${cmPx}`);
+                subgridPath.setAttribute('d', `M ${cmPx/2} 0 L 0 0 0 ${cmPx/2}`);
+            }
+        }
+
+        // Calculate Bust Dart Width from Section Variations Table
+        function calculateBustDartWidth(bustVal, isImperial) {
+            if (isImperial) {
+                if (bustVal <= 32) return 2.25;
+                if (bustVal <= 34) return 2.5;
+                if (bustVal <= 36) return 3.0;
+                if (bustVal <= 38) return 3.25;
+                if (bustVal <= 40) return 3.5;
+                return 4.0;
+            } else {
+                if (bustVal <= 80) return 5.5;
+                if (bustVal <= 86) return 6.25;
+                if (bustVal <= 92) return 7.5;
+                if (bustVal <= 98) return 8.25;
+                if (bustVal <= 102) return 9.0;
+                return 10.0;
+            }
+        }
+
+        function getInputs() {
+            return {
+                bust: parseFloat(document.getElementById('bust').value) || 0,
+                waist: parseFloat(document.getElementById('waist').value) || 0,
+                hips: parseFloat(document.getElementById('hips').value) || 0,
+                back_waist: parseFloat(document.getElementById('back_waist').value) || 0,
+                chest_width: parseFloat(document.getElementById('chest_width').value) || 0,
+                back_width: parseFloat(document.getElementById('back_width').value) || 0,
+                shoulder: parseFloat(document.getElementById('shoulder').value) || 0,
+                waist_to_hip: parseFloat(document.getElementById('waist_to_hip').value) || 0,
+            };
+        }
+
+        function drawPattern() {
+            const m = getInputs();
+            const isImperial = currentUnit === 'in';
+            const unitLbl = isImperial ? 'in' : 'cm';
+
+            const layer = document.getElementById('pattern-layer');
+            layer.innerHTML = ''; // Clear SVG layer
+
+            // Outer Base Frame Setup
+            const rectW = ((m.hips / 2) + (isImperial ? 1.25 : 3)) * scale;
+            const rectH = (m.back_waist + m.waist_to_hip + (isImperial ? 1.0 : 2.5)) * scale;
+
+            // X Coordinates (CB is x=0, CF is right edge)
+            const cbX = 0;
+            const cfX = rectW;
+
+            // Y Coordinates (Horizontal Reference Lines)
+            const topY = 0;
+            const napeY = (isImperial ? 1.0 : 2.5) * scale;
+            const waistY = napeY + (m.back_waist * scale);
+            const hipY = waistY + (m.waist_to_hip * scale);
+
+            const bustOffset = (m.back_waist / 2) + (m.bust > (isImperial ? 40 : 100) ? (isImperial ? 0.625 : 1.5) : (isImperial ? 0.375 : 1.0));
+            const bustY = napeY + (bustOffset * scale);
+            const shoulderLineY = napeY + ((isImperial ? 1.25 : 3.0) * scale);
+            const backLineY = napeY + (((bustOffset + (isImperial ? 1.25 : 3.0)) / 2) * scale);
+
+            // Neck Width Calculations
+            const neckW = ((((m.bust / 8) + (isImperial ? 1.25 : 3.0)) / 2) - (isImperial ? 0.25 : 0.5)) * scale;
+            
+            // --- BACK PATTERN PIECE ---
+            const backNP = { x: neckW, y: napeY - ((isImperial ? 0.75 : 2.0) * scale) };
+            const backArmholeX = ((m.back_width / 2) + (isImperial ? 0.25 : 0.5)) * scale;
+            const backUP = { x: backArmholeX + ((isImperial ? 2.0 : 5.0) * scale), y: bustY };
+
+            // Back Shoulder & Armhole
+            const shoulderLen = (m.shoulder + (isImperial ? 0.375 : 1.0)) * scale;
+            const shoulderPointX = backNP.x + Math.sqrt(Math.max(0, Math.pow(shoulderLen, 2) - Math.pow(shoulderLineY - backNP.y, 2)));
+            const backSP = { x: shoulderPointX, y: shoulderLineY };
+
+            // Render Reference Frame
+            renderLine(layer, 0, topY, cfX, topY, 'pattern-frame');
+            renderLine(layer, 0, waistY, cfX, waistY, 'pattern-grid-line');
+            renderText(layer, 10, waistY - 5, `WAIST LINE`);
+            renderLine(layer, 0, bustY, cfX, bustY, 'pattern-grid-line');
+            renderText(layer, 10, bustY - 5, `BUST LINE`);
+            renderLine(layer, 0, hipY, cfX, hipY, 'pattern-frame');
+            renderText(layer, 10, hipY - 5, `HIP LINE`);
+
+            // Center Back & Center Front Lines
+            renderLine(layer, cbX, topY, cbX, hipY, 'pattern-main-line');
+            renderPointWithLabel(layer, cbX, napeY, 'CB (Nape)');
+
+            renderLine(layer, cfX, topY, cfX, hipY, 'pattern-main-line');
+            renderPointWithLabel(layer, cfX, napeY, 'CF (Front)', -60, -5);
+
+            // Back Neck Curve & Points
+            renderPath(layer, `M 0,${napeY} Q ${backNP.x * 0.5},${napeY} ${backNP.x},${backNP.y}`, 'pattern-main-line');
+            renderPointWithLabel(layer, backNP.x, backNP.y, 'Back NP');
+
+            // Back Shoulder Line & Label
+            renderLine(layer, backNP.x, backNP.y, backSP.x, backSP.y, 'pattern-main-line');
+            renderPointWithLabel(layer, backSP.x, backSP.y, 'Back SP');
+
+            // Back Armhole Dotted Guide Line (Calculated Slide Line)
+            renderLine(layer, backArmholeX, shoulderLineY, backArmholeX, bustY, 'pattern-calc-dotted');
+            renderAnnotation(layer, backArmholeX + 4, (shoulderLineY + bustY) / 2, 'Back Armhole Guide');
+
+            // Back Armhole Curve Path
+            const back45X = backArmholeX + ((isImperial ? 1.25 : 3.0) * scale);
+            const back45Y = bustY - ((isImperial ? 1.25 : 3.0) * scale);
+            renderPath(layer, `M ${backSP.x},${backSP.y} Q ${backArmholeX},${backLineY} ${back45X},${back45Y} T ${backUP.x},${backUP.y}`, 'pattern-main-line');
+            renderPointWithLabel(layer, backUP.x, backUP.y, 'Back UP');
+
+            // --- FRONT PATTERN PIECE ---
+            const frontNP = { x: cfX - neckW, y: topY };
+            const frontNeckBaseY = topY + ((isImperial ? 3.0 : 7.5) * scale);
+            renderPointWithLabel(layer, frontNP.x, frontNP.y, 'Front NP', -50, -5);
+
+            // Front Neck Curve
+            const neckCornerX = cfX - neckW;
+            const neckCornerY = frontNeckBaseY;
+            renderPath(layer, `M ${frontNP.x},${frontNP.y} Q ${neckCornerX},${neckCornerY} ${cfX},${frontNeckBaseY}`, 'pattern-main-line');
+
+            // Bust Point (BP) & Bust Dart Calculations
+            const bustPointX = cfX - ((m.chest_width / 4) * scale);
+            const bustPointY = bustY + ((isImperial ? 1.0 : 2.5) * scale);
+            renderPointWithLabel(layer, bustPointX, bustPointY, 'BP (Bust Point)', -40, 15);
+
+            // Step 15 & 16: Front Bust Dart Guide Dotted Line & Dart Legs
+            const dartWidthVal = calculateBustDartWidth(m.bust, isImperial);
+            const dartWidthPx = dartWidthVal * scale;
+            const frontDartTopX1 = frontNP.x - ((isImperial ? 2.0 : 5.0) * scale);
+            const frontDartTopX2 = frontDartTopX1 - dartWidthPx;
+
+            // Dotted Calculated Dart Guide Line
+            renderLine(layer, frontDartTopX1, topY, bustPointX, bustPointY, 'pattern-calc-dotted');
+            renderAnnotation(layer, (frontDartTopX1 + bustPointX)/2 + 5, (topY + bustPointY)/2, 'Bust Dart Guide');
+
+            // Actual Dart Legs
+            renderLine(layer, frontDartTopX1, topY + (1.2 * scale), bustPointX, bustPointY, 'pattern-dart-line');
+            renderLine(layer, frontDartTopX2, topY + (1.2 * scale), bustPointX, bustPointY, 'pattern-dart-line');
+            renderAnnotation(layer, (frontDartTopX1 + frontDartTopX2)/2 - 20, topY + (1.0 * scale), `Dart: ${dartWidthVal} ${unitLbl}`);
+
+            // Front Chest Line & Front Chest Point (CP)
+            const distNeckToBust = frontNeckBaseY - bustY;
+            const chestLineY = bustY - (distNeckToBust / 3);
+            const chestWidthPx = ((m.chest_width / 2) * scale) + (dartWidthPx * 0.4);
+            const frontCP = { x: cfX - chestWidthPx, y: chestLineY };
+
+            // Chest Line Dotted Calculation Line
+            renderLine(layer, cfX, chestLineY, frontCP.x, chestLineY, 'pattern-calc-dotted');
+            renderAnnotation(layer, cfX - 80, chestLineY - 4, 'Chest Line');
+            renderPointWithLabel(layer, frontCP.x, frontCP.y, 'CP (Chest Point)', -70, -5);
+
+            // Front Underarm Point (UP)
+            const frontUPDist = ((m.bust / 2) * scale) - backArmholeX;
+            const frontUP = { x: cfX - frontUPDist, y: bustY };
+            renderPointWithLabel(layer, frontUP.x, frontUP.y, 'Front UP', -55, 12);
+
+            // Front Armhole Curve & Construction Dotted Line
+            const frontSP = { x: frontNP.x - (m.shoulder * scale) - dartWidthPx, y: shoulderLineY };
+            renderPointWithLabel(layer, frontSP.x, frontSP.y, 'Front SP', -55, -5);
+            renderLine(layer, frontNP.x, frontNP.y, frontSP.x, frontSP.y, 'pattern-main-line');
+
+            // Guide line SP to CP
+            renderLine(layer, frontSP.x, frontSP.y, frontCP.x, frontCP.y, 'pattern-calc-dotted');
+            renderPath(layer, `M ${frontSP.x},${frontSP.y} Q ${frontCP.x},${chestLineY} ${frontUP.x},${frontUP.y}`, 'pattern-main-line');
+
+            // Hip Points & Side Seams
+            const backHipX = ((m.hips / 4) * scale);
+            const frontHipX = cfX - (((m.hips / 4) + (isImperial ? 1.25 : 3.0)) * scale);
+            renderPointWithLabel(layer, backHipX, hipY, 'Back HP');
+            renderPointWithLabel(layer, frontHipX, hipY, 'Front HP', -50, -5);
+
+            renderLine(layer, backUP.x, backUP.y, backHipX, hipY, 'pattern-main-line');
+            renderLine(layer, frontUP.x, frontUP.y, frontHipX, hipY, 'pattern-main-line');
+
+            // Step 25 & 26: Waist Darts
+            const frontWaistDartX = cfX - ((m.chest_width / 4) * scale);
+            renderLine(layer, frontWaistDartX, waistY - (5 * scale), frontWaistDartX, waistY + (5 * scale), 'pattern-calc-dotted');
+            renderAnnotation(layer, frontWaistDartX + 4, waistY - (2 * scale), 'Front Waist Dart Axis');
+            
+            const backWaistDartX = ((m.back_width / 4) * scale);
+            renderLine(layer, backWaistDartX, waistY - (6 * scale), backWaistDartX, waistY + (6 * scale), 'pattern-calc-dotted');
+            renderAnnotation(layer, backWaistDartX + 4, waistY - (2 * scale), 'Back Waist Dart Axis');
+
+            updateTransform();
+        }
+
+        // SVG Helper Functions
+        function renderLine(parent, x1, y1, x2, y2, className) {
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+            line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+            line.setAttribute("class", className);
+            parent.appendChild(line);
+        }
+
+        function renderPath(parent, d, className) {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", d);
+            path.setAttribute("class", className);
+            parent.appendChild(path);
+        }
+
+        function renderPointWithLabel(parent, cx, cy, labelText, offsetX = 8, offsetY = -6) {
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", cx); circle.setAttribute("cy", cy);
+            circle.setAttribute("class", "pattern-point");
+            parent.appendChild(circle);
+
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", cx + offsetX);
+            text.setAttribute("y", cy + offsetY);
+            text.setAttribute("class", "pattern-text");
+            text.textContent = labelText;
+            parent.appendChild(text);
+        }
+
+        function renderAnnotation(parent, x, y, content) {
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", x);
+            text.setAttribute("y", y);
+            text.setAttribute("class", "pattern-anno-text");
+            text.textContent = content;
+            parent.appendChild(text);
+        }
+
+        function renderText(parent, x, y, content) {
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", x); text.setAttribute("y", y);
+            text.setAttribute("class", "pattern-text");
+            text.textContent = content;
+            parent.appendChild(text);
+        }
+
+        // Zoom & Pan Interactivity
+        function updateTransform() {
+            document.getElementById('viewport').setAttribute('transform', `translate(${panX}, ${panY})`);
+        }
+
+        function zoom(factor) {
+            scale *= factor;
+            updateGridPattern();
+            drawPattern();
+        }
+
+        function resetZoom() {
+            scale = currentUnit === 'in' ? 96 : 37.795;
+            panX = 100; panY = 60;
+            updateGridPattern();
+            drawPattern();
+        }
+
+        const container = document.getElementById('svg-container');
+        container.addEventListener('mousedown', (e) => { isDragging = true; startX = e.clientX - panX; startY = e.clientY - panY; });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateTransform();
+        });
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        // 1:1 Scale Print Handler for A4 / A3 Paper
+        function triggerPrint(pageSize) {
+            // Save viewport state, reset pan/scale for 1:1 true scale print output
+            const originalPanX = panX, originalPanY = panY;
+            panX = 30; panY = 30;
+            updateTransform();
+
+            window.print();
+
+            // Restore screen viewport
+            panX = originalPanX; panY = originalPanY;
+            updateTransform();
+        }
+
+        function exportSVG() {
+            const svgData = document.getElementById('pattern-canvas').outerHTML;
+            const svgBlob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
+            const svgUrl = URL.createObjectURL(svgBlob);
+            const downloadLink = document.createElement("a");
+            downloadLink.href = svgUrl;
+            downloadLink.download = "bodice_pattern_1to1.svg";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        // Initial Load
+        updateGridPattern();
+        drawPattern();
+    </script>
+</body>
+</html>
