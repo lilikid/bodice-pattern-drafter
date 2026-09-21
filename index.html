@@ -384,15 +384,9 @@
         .grid-line-half { stroke: #d5ccc8; stroke-width: 0.8; vector-effect: non-scaling-stroke; }
         .grid-line-major { stroke: #b8aba5; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 
-        /* Interactive label style */
         .pattern-label {
-            cursor: pointer;
             user-select: none;
-            transition: opacity 0.2s ease;
-            pointer-events: auto;
-        }
-        .pattern-label:hover {
-            opacity: 0.6;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -1073,13 +1067,6 @@
             label.setAttribute('class', 'pattern-label');
             label.textContent = textString;
 
-            let isHidden = false;
-            label.addEventListener('click', (e) => {
-                e.stopPropagation();
-                isHidden = !isHidden;
-                label.style.display = isHidden ? 'none' : 'block';
-            });
-
             parentGroup.appendChild(label);
             return label;
         }
@@ -1100,6 +1087,7 @@
             const hipEaseVal = parseFloat(document.getElementById('hipEase').value);
             const backLengthVal = parseFloat(document.getElementById('backNeckToWaist').value);
             const waistToHipVal = parseFloat(document.getElementById('waistToHip').value);
+            const shoulderLenVal = parseFloat(document.getElementById('shoulderLength').value) + parseFloat(document.getElementById('shoulderLengthEase').value);
 
             // Updated Bodice Box Dimensions per user specs
             const bWidth = (((hipVal + hipEaseVal) / 2.0) + 2.0) * scaleFactor;
@@ -1151,7 +1139,7 @@
             bodiceGroup.appendChild(bustLine);
             appendLabel(bodiceGroup, `Bust Line`, 60, bustLineY, '#c25e6f', '11', '600', true);
 
-            // Back Neck Width
+            // Back Neck Width & Back Neck Point
             const backNeckWidth = ((totalBust / 8.0) + 1.25) / 2.0;
             const backNeckWidthPixels = backNeckWidth * scaleFactor;
 
@@ -1173,14 +1161,49 @@
             bodiceGroup.appendChild(finalNeckPointCircle);
             appendLabel(bodiceGroup, 'Back Neck Point', finalNeckPointX + 12, finalNeckPointY, '#0284c7', '11', 'bold', true);
 
-            // Bottom line across the hip line
+            // Shoulder Slope & Tip
+            const shoulderDrop = 1.25 * scaleFactor;
+            const shoulderTipX = finalNeckPointX + (shoulderLenVal * scaleFactor * 0.88);
+            const shoulderTipY = napeLineY + shoulderDrop;
+
+            const shoulderSlopeLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            shoulderSlopeLine.setAttribute('x1', finalNeckPointX); shoulderSlopeLine.setAttribute('y1', finalNeckPointY);
+            shoulderSlopeLine.setAttribute('x2', shoulderTipX); shoulderSlopeLine.setAttribute('y2', shoulderTipY);
+            shoulderSlopeLine.setAttribute('stroke', '#2b2d42'); shoulderSlopeLine.setAttribute('stroke-width', '2');
+            bodiceGroup.appendChild(shoulderSlopeLine);
+            appendLabel(bodiceGroup, 'Shoulder Seam', finalNeckPointX + 30, finalNeckPointY - 15, '#2b2d42', '11', 'bold', true);
+
+            // Armhole Curve & Underarm Point
+            const backWidthVal = parseFloat(document.getElementById('backWidth').value) * scaleFactor;
+            const armholeMidY = napeLineY + ((bustLineY - napeLineY) / 2);
+            const underarmX = 50 + backWidthVal;
+
+            const armholePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const armholeData = `M ${shoulderTipX} ${shoulderTipY} Q ${underarmX + 15} ${armholeMidY} ${underarmX} ${bustLineY}`;
+            armholePath.setAttribute('d', armholeData);
+            armholePath.setAttribute('stroke', '#d90429');
+            armholePath.setAttribute('stroke-width', '2');
+            armholePath.setAttribute('fill', 'none');
+            bodiceGroup.appendChild(armholePath);
+            appendLabel(bodiceGroup, 'Back Armhole Curve', shoulderTipX + 25, armholeMidY, '#d90429', '11', 'bold', true);
+
+            // Waist Line & Bottom Hip Line
+            const waistLineY = napeLineY + (backLengthVal * scaleFactor);
+            const waistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            waistLine.setAttribute('x1', 50); waistLine.setAttribute('y1', waistLineY);
+            waistLine.setAttribute('x2', 50 + bWidth); waistLine.setAttribute('y2', waistLineY);
+            waistLine.setAttribute('stroke', '#2563eb'); waistLine.setAttribute('stroke-width', '1.5');
+            waistLine.setAttribute('stroke-dasharray', '4 4');
+            bodiceGroup.appendChild(waistLine);
+            appendLabel(bodiceGroup, 'Waist Line', 60, waistLineY, '#2563eb', '11', 'bold', true);
+
             const hipLineY = 50 + bHeight;
             const hipLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             hipLine.setAttribute('x1', 50); hipLine.setAttribute('y1', hipLineY);
             hipLine.setAttribute('x2', 50 + bWidth); hipLine.setAttribute('y2', hipLineY);
             hipLine.setAttribute('stroke', '#2563eb'); hipLine.setAttribute('stroke-width', '2');
             bodiceGroup.appendChild(hipLine);
-            appendLabel(hipLineY, `Hip Line`, 60, hipLineY - 10, '#2563eb', '11', 'bold', true);
+            appendLabel(bodiceGroup, 'Hip Line', 60, hipLineY - 10, '#2563eb', '11', 'bold', true);
 
             // Optional Modules check
             if (document.getElementById('includeSleeve').value === 'yes') {
@@ -1207,8 +1230,6 @@
 
             const sleeveBoxX = 100;
             const sleeveBoxY = 60;
-            const capHeight = (bicepVal / 3.0) * scaleFactor;
-            const totalSleeveLen = sleeveLenVal * scaleFactor;
 
             const topCapLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             topCapLine.setAttribute('x1', sleeveBoxX); topCapLine.setAttribute('y1', sleeveBoxY);
