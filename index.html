@@ -384,7 +384,6 @@
         .grid-line-half { stroke: #d5ccc8; stroke-width: 0.8; vector-effect: non-scaling-stroke; }
         .grid-line-major { stroke: #b8aba5; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 
-        /* Interactive label style */
         .pattern-label {
             cursor: pointer;
             user-select: none;
@@ -794,7 +793,6 @@
         }
 
         function adjustZoom(delta) {
-            const oldScale = currentScale;
             currentScale = Math.min(Math.max(0.3, currentScale + delta), 4.0);
             updateTransform();
         }
@@ -1096,6 +1094,7 @@
             const bodiceGroup = document.querySelector('#svg-bodice .pattern-group-sub');
             bodiceGroup.innerHTML = '';
             
+            // Calculate dimensions first so they are available for the bounding box and grid setup
             const totalBust = parseFloat(document.getElementById('bust').value) + parseFloat(document.getElementById('bustEase').value);
             const hipVal = parseFloat(document.getElementById('hip').value);
             const hipEaseVal = parseFloat(document.getElementById('hipEase').value);
@@ -1110,7 +1109,7 @@
             initGrids('svg-bodice', canvasBWidth, canvasBHeight);
             document.getElementById('bodiceTitle').textContent = `Bodice Block (Bust: ${totalBust}" | Hip: ${hipVal + hipEaseVal}")`;
 
-            // --- ADDED: Enclosing Box drawn around CB, CF and Hip Line ---
+            // Enclosing Box drawn around CB, CF and Hip Line
             const blockBoundingBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             blockBoundingBox.setAttribute('x', 50);
             blockBoundingBox.setAttribute('y', 50);
