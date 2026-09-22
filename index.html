@@ -2023,6 +2023,34 @@
 
             appendLabel(bodiceGroup, 'Provisional Side Seam', ((frontUnderarmPointX + frontHipPointX) / 2) - 40, ((bustLineY + hipLineY) / 2), '#0284c7', '10', 'bold', true);
 
+            // --- STEP 27: Front Hip Point ---
+            // Calculate a quarter hip measurement plus 1.25 inches (3 cm) ease, measured from CF along the hip line.
+            const rawHipMeasurement = parseFloat(document.getElementById('hipMeasurement').value) || 38.0;
+            const quarterHipVal = rawHipMeasurement / 4.0;
+            const hipEaseVal = 1.25; // 1.25 inches (~3 cm) ease
+            const totalFrontHipDistance = (quarterHipVal + hipEaseVal) * scaleFactor;
+            const frontHipPointX = cfAnchorX - totalFrontHipDistance;
+
+            const frontHipMark = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            frontHipMark.setAttribute('cx', frontHipPointX);
+            frontHipMark.setAttribute('cy', hipLineY);
+            frontHipMark.setAttribute('r', '5');
+            frontHipMark.setAttribute('fill', '#0284c7');
+            bodiceGroup.appendChild(frontHipMark);
+
+            appendLabel(bodiceGroup, `Step 27: Front Hip Point (${quarterHipVal.toFixed(2)}" + ${hipEaseVal.toFixed(2)}" ease)`, frontHipPointX - 180, hipLineY + 20, '#0284c7', '10', 'bold', false);
+
+            // Join front underarm point and front hip point with a straight guideline for the provisional side seam.
+            const provisionalSideSeam = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            provisionalSideSeam.setAttribute('x1', frontUnderarmPointX); provisionalSideSeam.setAttribute('y1', bustLineY);
+            provisionalSideSeam.setAttribute('x2', frontHipPointX); provisionalSideSeam.setAttribute('y2', hipLineY);
+            provisionalSideSeam.setAttribute('stroke', '#0284c7');
+            provisionalSideSeam.setAttribute('stroke-width', '2');
+            provisionalSideSeam.setAttribute('stroke-dasharray', '4 4');
+            bodiceGroup.appendChild(provisionalSideSeam);
+
+            appendLabel(bodiceGroup, 'Provisional Side Seam', ((frontUnderarmPointX + frontHipPointX) / 2) - 40, ((bustLineY + hipLineY) / 2), '#0284c7', '10', 'bold', true);
+          
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
