@@ -1980,7 +1980,20 @@
 
             appendLabel(bodiceGroup, `Step 25: Point Y (${yDistInches.spec || yDistInches.toFixed(2)}" at 45º)`, pointY_X - 60, pointY_Y - 12, '#0d9488', '11', 'bold', true);
 
+// --- STEP 26: Waist Line ---
+            // Find the Waist line, measure down from the Nape using the Back Waist measurement Square across to the Centre Front and label it Waist Line
+            const backWaistMeasurementInches = backLengthVal; // Back Waist measurement
+            const waistLineY = napeLineY + (backWaistMeasurementInches * scaleFactor);
 
+            const waistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            waistLine.setAttribute('x1', 50); waistLine.setAttribute('y1', waistLineY);
+            waistLine.setAttribute('x2', 50 + bWidth); waistLine.setAttribute('y2', waistLineY);
+            waistLine.setAttribute('stroke', '#c25e6f');
+            waistLine.setAttribute('stroke-width', '1.5');
+            waistLine.setAttribute('stroke-dasharray', '6 3');
+            bodiceGroup.appendChild(waistLine);
+
+            appendLabel(bodiceGroup, `Step 25: Waist Line (${backWaistMeasurementInches.toFixed(2)}" down from Nape)`, 60, waistLineY - 8, '#c25e6f', '11', 'bold', true);
   
 
             // --- 2. SLEEVE BLOCK ---
