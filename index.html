@@ -1995,8 +1995,9 @@
             bodiceGroup.appendChild(waistLine);
 
             appendLabel(bodiceGroup, `Step 26: Waist Line (${backWaistMeasurementInches.toFixed(2)}" / ${(backWaistMeasurementInches * 2.54).toFixed(1)}cm down from Nape)`, 60, waistLineY - 8, '#c25e6f', '11', 'bold', true);
-// --- STEP 27: Front Hip Point & Provisional Side Seam ---
-            const hipMeasurementInches = parseFloat(document.getElementById('hipMeasurement').value) || 41.0;
+// --- STEP 27: Front Hip Point & Provisional Side Seam (Safe Version) ---
+            const hipInput = document.getElementById('hipMeasurement');
+            const hipMeasurementInches = hipInput ? (parseFloat(hipInput.value) || 41.0) : 41.0;
             const quarterHipPlusEase = (hipMeasurementInches / 4) + 1.25; // Quarter hip + 1.25 inches (approx. 3 cm)
             const frontHipPixels = quarterHipPlusEase * scaleFactor;
             
@@ -2031,8 +2032,7 @@
             bodiceGroup.appendChild(frontSideSeamGuideline);
 
             appendLabel(bodiceGroup, 'Step 27: Provisional Side Seam', (frontUnderarmPointX + frontHipPointX) / 2 + 12, (frontUnderarmPointY + frontHipPointY) / 2, '#0284c7', '10', 'bold', true);
-
-            
+          
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
