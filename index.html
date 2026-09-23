@@ -2011,8 +2011,8 @@
             appendLabel(bodiceGroup, `Step 27: Front Hip Point (${frontHipDistInches.toFixed(2)}" from CF)`, frontHipPointX - 30, frontHipPointY + 24, '#0284c7', '11', 'bold', false);
 
             // Front underarm point (approximated along the bust line corresponding to chest width extension)
-            const frontUnderarmPointX = cfAnchorX - (((chestWidthVal / 2.0) + 1.0) * scaleFactor);
-            const frontUnderarmPointY = bustLineY;
+            frontUnderarmPointX = cfAnchorX - (((chestWidthVal / 2.0) + 1.0) * scaleFactor);
+            frontUnderarmPointY = bustLineY;
 
             // Join front underarm point and front hip point with a straight guideline for the provisional side seam
             const frontSideSeamGuideline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -2026,7 +2026,7 @@
             const step27MidX = (frontUnderarmPointX + frontHipPointX) / 2;
             const step27MidY = (frontUnderarmPointY + frontHipPointY) / 2;
             appendLabel(bodiceGroup, 'Step 27: Provisional Front Side Seam', step27MidX + 10, step27MidY, '#0891b2', '10', '600', false);
-    
+          
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
