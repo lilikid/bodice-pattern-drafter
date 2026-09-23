@@ -1981,37 +1981,21 @@
             appendLabel(bodiceGroup, `Step 25: Point Y (${yDistInches.spec || yDistInches.toFixed(2)}" at 45º)`, pointY_X - 60, pointY_Y - 12, '#0d9488', '11', 'bold', true);
 
 
-// 1. Determine coordinates based on your pattern schema variables
-const napeX = patternConfig.napeX || 50; 
-const napeY = patternConfig.napeY || 50;
-const backWaist = measurements.backWaist || 40; // Back Waist length (e.g., in cm)
-const centreFrontX = patternConfig.centreFrontX || 200; // Centre front coordinate
+// --- STEP 26: Waist Line ---
+            const backWaistMeasurementInches = parseFloat(document.getElementById('backNeckToWaist').value) || 15.5;
+            const backWaistPixels = backWaistMeasurementInches * scaleFactor;
+            const waistLineY = napeLineY + backWaistPixels;
 
-// 2. Calculate the waist line vertical position
-const waistY = napeY + backWaist;
+            const waistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            waistLine.setAttribute('x1', 50); waistLine.setAttribute('y1', waistLineY);
+            waistLine.setAttribute('x2', 50 + bWidth); waistLine.setAttribute('y2', waistLineY);
+            waistLine.setAttribute('stroke', '#c25e6f');
+            waistLine.setAttribute('stroke-width', '1.75');
+            waistLine.setAttribute('stroke-dasharray', '5 3');
+            bodiceGroup.appendChild(waistLine);
 
-// 3. Create and append the squared Waist Line construction line
-const waistLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-waistLine.setAttribute("x1", napeX);
-waistLine.setAttribute("y1", waistY);
-waistLine.setAttribute("x2", centreFrontX);
-waistLine.setAttribute("y2", waistY);
-waistLine.setAttribute("stroke", "#e74c3c"); // Construction line color
-waistLine.setAttribute("stroke-width", "0.8");
-waistLine.setAttribute("stroke-dasharray", "4,4");
-svgCanvas.appendChild(waistLine);
-
-// 4. Create and append the "Waist Line" text label
-const waistLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-waistLabel.setAttribute("x", centreFrontX - 60);
-waistLabel.setAttribute("y", waistY - 4);
-waistLabel.setAttribute("font-size", "9");
-waistLabel.setAttribute("font-family", "Arial, sans-serif");
-waistLabel.setAttribute("fill", "#555");
-waistLabel.textContent = "Waist Line";
-svgCanvas.appendChild(waistLabel);
-  
-
+            appendLabel(bodiceGroup, `Step 26: Waist Line (${backWaistMeasurementInches.toFixed(2)}" / ${(backWaistMeasurementInches * 2.54).toFixed(1)}cm down from Nape)`, 60, waistLineY - 8, '#c25e6f', '11', 'bold', true);
+            
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
