@@ -2023,6 +2023,84 @@
             const step27MidX = (frontUnderarmPointX + frontHipPointX) / 2;
             const step27MidY = (frontUnderarmPointY + frontHipPointY) / 2;
             appendLabel(bodiceGroup, 'Step 27: Provisional Front Side Seam', step27MidX + 10, step27MidY, '#0891b2', '10', '600', false);
+
+// --- STEP 28: True Bust Line ---
+            // Draw the true bust line 2 inches (5 cm) below the bust line and square across
+            const trueBustLineY = bustLineY + (2.0 * scaleFactor);
+            const trueBustLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            trueBustLine.setAttribute('x1', cbAnchorX);
+            trueBustLine.setAttribute('y1', trueBustLineY);
+            trueBustLine.setAttribute('x2', cfAnchorX);
+            trueBustLine.setAttribute('y2', trueBustLineY);
+            trueBustLine.setAttribute('stroke', '#64748b');
+            trueBustLine.setAttribute('stroke-width', '1.25');
+            trueBustLine.setAttribute('stroke-dasharray', '5 3');
+            bodiceGroup.appendChild(trueBustLine);
+
+            appendLabel(bodiceGroup, 'Step 28: True Bust Line (2" below Bust Line)', cbAnchorX + 15, trueBustLineY - 5, '#64748b', '10', 'normal', false);
+
+            // --- STEP 29: Basic Waist Shaping ---
+            // Lower the front waistline by 0.5 inches (1.5 cm)
+            const loweredFrontWaistY = waistLineY + (0.5 * scaleFactor);
+            
+            const loweredWaistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            loweredWaistLine.setAttribute('x1', cbAnchorX);
+            loweredWaistLine.setAttribute('y1', waistLineY); // keeping back waist reference, dropping front
+            loweredWaistLine.setAttribute('x2', cfAnchorX);
+            loweredWaistLine.setAttribute('y2', loweredFrontWaistY);
+            loweredWaistLine.setAttribute('stroke', '#e11d48');
+            loweredWaistLine.setAttribute('stroke-width', '1.5');
+            bodiceGroup.appendChild(loweredWaistLine);
+            appendLabel(bodiceGroup, 'Step 29: Lowered Front Waist Line', cfAnchorX - 120, loweredFrontWaistY + 14, '#e11d48', '10', '600', false);
+
+            // --- STEP 30: Waist Dart Placement ---
+            // Front Dart: measure 1/4 * chest width from CF, length 10 inches (25 cm) centered across the waistline
+            const frontDartDistX = cfAnchorX - (((chestWidthVal / 4.0)) * scaleFactor);
+            const frontDartStartY = loweredFrontWaistY - (5.0 * scaleFactor); // 5 inches up
+            const frontDartEndY = loweredFrontWaistY + (5.0 * scaleFactor);   // 5 inches down (Total 10" length)
+
+            const frontDartGuide = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            frontDartGuide.setAttribute('x1', frontDartDistX);
+            frontDartGuide.setAttribute('y1', frontDartStartY);
+            frontDartGuide.setAttribute('x2', frontDartDistX);
+            frontDartGuide.setAttribute('y2', frontDartEndY);
+            frontDartGuide.setAttribute('stroke', '#f97316');
+            frontDartGuide.setAttribute('stroke-width', '1.25');
+            frontDartGuide.setAttribute('stroke-dasharray', '3 3');
+            bodiceGroup.appendChild(frontDartGuide);
+
+            const frontDartCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            frontDartCircle.setAttribute('cx', frontDartDistX);
+            frontDartCircle.setAttribute('cy', loweredFrontWaistY);
+            frontDartCircle.setAttribute('r', '4.5');
+            frontDartCircle.setAttribute('fill', '#f97316');
+            bodiceGroup.appendChild(frontDartCircle);
+
+            appendLabel(bodiceGroup, 'Step 30: Front Waist Dart Guideline (1/4 Chest Width from CF, 10" long)', frontDartDistX + 8, frontDartStartY + 15, '#f97316', '10', '600', false);
+
+            // Back Dart: measure 1/4 * back width from CB, length 12 inches (30 cm) centered across the waistline
+            const backDartDistX = cbAnchorX + (((backWidthVal / 4.0)) * scaleFactor);
+            const backDartStartY = waistLineY - (6.0 * scaleFactor); // 6 inches up
+            const backDartEndY = waistLineY + (6.0 * scaleFactor);   // 6 inches down (Total 12" length)
+
+            const backDartGuide = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            backDartGuide.setAttribute('x1', backDartDistX);
+            backDartGuide.setAttribute('y1', backDartStartY);
+            backDartGuide.setAttribute('x2', backDartDistX);
+            backDartGuide.setAttribute('y2', backDartEndY);
+            backDartGuide.setAttribute('stroke', '#f97316');
+            backDartGuide.setAttribute('stroke-width', '1.25');
+            backDartGuide.setAttribute('stroke-dasharray', '3 3');
+            bodiceGroup.appendChild(backDartGuide);
+
+            const backDartCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            backDartCircle.setAttribute('cx', backDartDistX);
+            backDartCircle.setAttribute('cy', waistLineY);
+            backDartCircle.setAttribute('r', '4.5');
+            backDartCircle.setAttribute('fill', '#f97316');
+            bodiceGroup.appendChild(backDartCircle);
+
+            appendLabel(bodiceGroup, 'Step 30: Back Waist Dart Guideline (1/4 Back Width from CB, 12" long)', backDartDistX - 250, backDartStartY + 15, '#f97316', '10', '600', false);
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
