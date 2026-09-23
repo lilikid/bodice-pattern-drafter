@@ -2009,14 +2009,11 @@
             bodiceGroup.appendChild(frontHipCircle);
 
             appendLabel(bodiceGroup, `Step 27: Front Hip Point (${frontHipDistInches.toFixed(2)}" from CF)`, frontHipPointX - 30, frontHipPointY + 24, '#0284c7', '11', 'bold', false);
-// Define local coordinates for the front underarm point for this step to avoid scope conflicts
-            const s27UnderarmX = cfAnchorX - (((chestWidthVal / 2.0) + 1.0) * scaleFactor);
-            const s27UnderarmY = bustLineY;
-
-            // Join front underarm point and front hip point with a straight guideline for the provisional side seam
+// Join Step 23 Front Underarm Point and Front Hip Point with a straight guideline for the provisional side seam
+            // (Ensure frontUnderarmX and frontUnderarmY match the exact variable names used in your Step 23 block)
             const frontSideSeamGuideline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            frontSideSeamGuideline.setAttribute('x1', s27UnderarmX); 
-            frontSideSeamGuideline.setAttribute('y1', s27UnderarmY);
+            frontSideSeamGuideline.setAttribute('x1', frontUnderarmX); // Variable from Step 23
+            frontSideSeamGuideline.setAttribute('y1', frontUnderarmY); // Variable from Step 23
             frontSideSeamGuideline.setAttribute('x2', frontHipPointX); 
             frontSideSeamGuideline.setAttribute('y2', frontHipPointY);
             frontSideSeamGuideline.setAttribute('stroke', '#0891b2');
@@ -2024,9 +2021,9 @@
             frontSideSeamGuideline.setAttribute('stroke-dasharray', '4 4');
             bodiceGroup.appendChild(frontSideSeamGuideline);
 
-            const step27MidX = (s27UnderarmX + frontHipPointX) / 2;
-            const step27MidY = (s27UnderarmY + frontHipPointY) / 2;
-            appendLabel(bodiceGroup, 'Step 27: Provisional Front Side Seam', step27MidX + 10, step27MidY, '#0891b2', '10', '600', false);
+            const step27MidX = (frontUnderarmX + frontHipPointX) / 2;
+            const step27MidY = (frontUnderarmY + frontHipPointY) / 2;
+            appendLabel(bodiceGroup, 'Step 27: Provisional Front Side Seam', step27MidX + 10, step27MidY, '#0891b2', '10', '600', false);      
           
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
