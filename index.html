@@ -1995,44 +1995,38 @@
             bodiceGroup.appendChild(waistLine);
 
             appendLabel(bodiceGroup, `Step 26: Waist Line (${backWaistMeasurementInches.toFixed(2)}" / ${(backWaistMeasurementInches * 2.54).toFixed(1)}cm down from Nape)`, 60, waistLineY - 8, '#c25e6f', '11', 'bold', true);
-// --- STEP 27: Front Hip Point & Provisional Side Seam (Safe Version) ---
-            const hipInput = document.getElementById('hipMeasurement');
-            const hipMeasurementInches = hipInput ? (parseFloat(hipInput.value) || 41.0) : 41.0;
-            const quarterHipPlusEase = (hipMeasurementInches / 4) + 1.25; // Quarter hip + 1.25 inches (approx. 3 cm)
-            const frontHipPixels = quarterHipPlusEase * scaleFactor;
-            
-            // Standard hip depth below the waist line (approx. 8 inches / 20.3 cm)
-            const hipDepthInches = 8.0;
-            const hipLineY = waistLineY + (hipDepthInches * scaleFactor);
-
-            // Center Front (CF) X coordinate reference
-            const cfX = 50; 
-            const frontHipPointX = cfX + frontHipPixels;
+// --- STEP 27: Front Hip Point ---
+            const frontHipDistInches = (hipVal / 4.0) + 1.25; // Quarter hip measurement plus 1.25 inches (3 cm)
+            const frontHipDistPixels = frontHipDistInches * scaleFactor;
+            const frontHipPointX = cfAnchorX - frontHipDistPixels;
             const frontHipPointY = hipLineY;
 
-            // Draw Front Hip Point marker
-            const frontHipDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            frontHipDot.setAttribute('cx', frontHipPointX);
-            frontHipDot.setAttribute('cy', frontHipPointY);
-            frontHipDot.setAttribute('r', '4');
-            frontHipDot.setAttribute('fill', '#0284c7');
-            bodiceGroup.appendChild(frontHipDot);
+            const frontHipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            frontHipCircle.setAttribute('cx', frontHipPointX);
+            frontHipCircle.setAttribute('cy', frontHipPointY);
+            frontHipCircle.setAttribute('r', '5.5');
+            frontHipCircle.setAttribute('fill', '#0284c7');
+            bodiceGroup.appendChild(frontHipCircle);
 
-            appendLabel(bodiceGroup, 'Front Hip Point', frontHipPointX + 8, frontHipPointY + 4, '#0284c7', '10', 'bold', true);
+            appendLabel(bodiceGroup, `Step 27: Front Hip Point (${frontHipDistInches.toFixed(2)}" from CF)`, frontHipPointX - 30, frontHipPointY + 24, '#0284c7', '11', 'bold', false);
+
+            // Front underarm point (approximated along the bust line corresponding to chest width extension)
+            const frontUnderarmPointX = cfAnchorX - (((chestWidthVal / 2.0) + 1.0) * scaleFactor);
+            const frontUnderarmPointY = bustLineY;
 
             // Join front underarm point and front hip point with a straight guideline for the provisional side seam
             const frontSideSeamGuideline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            frontSideSeamGuideline.setAttribute('x1', frontUnderarmPointX); 
-            frontSideSeamGuideline.setAttribute('y1', frontUnderarmPointY);
-            frontSideSeamGuideline.setAttribute('x2', frontHipPointX); 
-            frontSideSeamGuideline.setAttribute('y2', frontHipPointY);
-            frontSideSeamGuideline.setAttribute('stroke', '#0284c7');
+            frontSideSeamGuideline.setAttribute('x1', frontUnderarmPointX); frontSideSeamGuideline.setAttribute('y1', frontUnderarmPointY);
+            frontSideSeamGuideline.setAttribute('x2', frontHipPointX); frontSideSeamGuideline.setAttribute('y2', frontHipPointY);
+            frontSideSeamGuideline.setAttribute('stroke', '#0891b2');
             frontSideSeamGuideline.setAttribute('stroke-width', '1.75');
             frontSideSeamGuideline.setAttribute('stroke-dasharray', '4 4');
             bodiceGroup.appendChild(frontSideSeamGuideline);
 
-            appendLabel(bodiceGroup, 'Step 27: Provisional Side Seam', (frontUnderarmPointX + frontHipPointX) / 2 + 12, (frontUnderarmPointY + frontHipPointY) / 2, '#0284c7', '10', 'bold', true);
-          
+            const step27MidX = (frontUnderarmPointX + frontHipPointX) / 2;
+            const step27MidY = (frontUnderarmPointY + frontHipPointY) / 2;
+            appendLabel(bodiceGroup, 'Step 27: Provisional Front Side Seam', step27MidX + 10, step27MidY, '#0891b2', '10', '600', false);
+    
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
