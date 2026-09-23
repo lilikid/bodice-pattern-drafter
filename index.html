@@ -1995,7 +1995,42 @@
             bodiceGroup.appendChild(waistLine);
 
             appendLabel(bodiceGroup, `Step 26: Waist Line (${backWaistMeasurementInches.toFixed(2)}" / ${(backWaistMeasurementInches * 2.54).toFixed(1)}cm down from Nape)`, 60, waistLineY - 8, '#c25e6f', '11', 'bold', true);
+// --- STEP 27: Front Hip Point & Provisional Side Seam ---
+            const hipMeasurementInches = parseFloat(document.getElementById('hipMeasurement').value) || 41.0;
+            const quarterHipPlusEase = (hipMeasurementInches / 4) + 1.25; // Quarter hip + 1.25 inches (approx. 3 cm)
+            const frontHipPixels = quarterHipPlusEase * scaleFactor;
+            
+            // Standard hip depth below the waist line (approx. 8 inches / 20.3 cm)
+            const hipDepthInches = 8.0;
+            const hipLineY = waistLineY + (hipDepthInches * scaleFactor);
 
+            // Center Front (CF) X coordinate reference
+            const cfX = 50; 
+            const frontHipPointX = cfX + frontHipPixels;
+            const frontHipPointY = hipLineY;
+
+            // Draw Front Hip Point marker
+            const frontHipDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            frontHipDot.setAttribute('cx', frontHipPointX);
+            frontHipDot.setAttribute('cy', frontHipPointY);
+            frontHipDot.setAttribute('r', '4');
+            frontHipDot.setAttribute('fill', '#0284c7');
+            bodiceGroup.appendChild(frontHipDot);
+
+            appendLabel(bodiceGroup, 'Front Hip Point', frontHipPointX + 8, frontHipPointY + 4, '#0284c7', '10', 'bold', true);
+
+            // Join front underarm point and front hip point with a straight guideline for the provisional side seam
+            const frontSideSeamGuideline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            frontSideSeamGuideline.setAttribute('x1', frontUnderarmPointX); 
+            frontSideSeamGuideline.setAttribute('y1', frontUnderarmPointY);
+            frontSideSeamGuideline.setAttribute('x2', frontHipPointX); 
+            frontSideSeamGuideline.setAttribute('y2', frontHipPointY);
+            frontSideSeamGuideline.setAttribute('stroke', '#0284c7');
+            frontSideSeamGuideline.setAttribute('stroke-width', '1.75');
+            frontSideSeamGuideline.setAttribute('stroke-dasharray', '4 4');
+            bodiceGroup.appendChild(frontSideSeamGuideline);
+
+            appendLabel(bodiceGroup, 'Step 27: Provisional Side Seam', (frontUnderarmPointX + frontHipPointX) / 2 + 12, (frontUnderarmPointY + frontHipPointY) / 2, '#0284c7', '10', 'bold', true);
 
             
             // --- 2. SLEEVE BLOCK ---
