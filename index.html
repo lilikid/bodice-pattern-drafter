@@ -1979,41 +1979,47 @@
             bodiceGroup.appendChild(pointYCircle);
 
             appendLabel(bodiceGroup, `Step 25: Point Y (${yDistInches.spec || yDistInches.toFixed(2)}" at 45º)`, pointY_X - 60, pointY_Y - 12, '#0d9488', '11', 'bold', true);
-// Step 26
-            const backWaistInches = parseFloat(document.getElementById('backNeckToWaist').value) || 15.5;
-            const waistY = napeLineY + (backWaistInches * scaleFactor);
-            const wLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            wLine.setAttribute('x1', 50);
-            wLine.setAttribute('y1', waistY);
-            wLine.setAttribute('x2', 50 + bWidth);
-            wLine.setAttribute('y2', waistY);
-            wLine.setAttribute('stroke', '#c25e6f');
-            wLine.setAttribute('stroke-width', '1.75');
-            bodiceGroup.appendChild(wLine);
+// --- STEP 26: Waist Line ---
+            const backWaistMeasurementInches = parseFloat(document.getElementById('backNeckToWaist').value) || 15.5;
+            const backWaistPixels = backWaistMeasurementInches * scaleFactor;
+            const waistLineY = napeLineY + backWaistPixels;
 
-            // Step 27
-            const fHipDist = ((hipVal / 4.0) + 1.25) * scaleFactor;
-            const fHipX = cfAnchorX - fHipDist;
-            const fHipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            fHipCircle.setAttribute('cx', fHipX);
-            fHipCircle.setAttribute('cy', hipLineY);
-            fHipCircle.setAttribute('r', '5.5');
-            fHipCircle.setAttribute('fill', '#0284c7');
-            bodiceGroup.appendChild(fHipCircle);
+            const waistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            waistLine.setAttribute('x1', 50); 
+            waistLine.setAttribute('y1', waistLineY);
+            waistLine.setAttribute('x2', 50 + bWidth); 
+            waistLine.setAttribute('y2', waistLineY);
+            waistLine.setAttribute('stroke', '#c25e6f');
+            waistLine.setAttribute('stroke-width', '1.75');
+            waistLine.setAttribute('stroke-dasharray', '5 3');
+            bodiceGroup.appendChild(waistLine);
 
-            // Step 28
-            const tBustY = bustLineY + (2.0 * scaleFactor);
-            const tBustLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            tBustLine.setAttribute('x1', 50);
-            tBustLine.setAttribute('y1', tBustY);
-            tBustLine.setAttribute('x2', cfAnchorX);
-            tBustLine.setAttribute('y2', tBustY);
-            tBustLine.setAttribute('stroke', '#64748b');
-            tBustLine.setAttribute('stroke-width', '1.25');
-            bodiceGroup.appendChild(tBustLine);
-            
+            // --- STEP 27: Front Hip Point ---
+            const frontHipDistInches = (hipVal / 4.0) + 1.25; 
+            const frontHipDistPixels = frontHipDistInches * scaleFactor;
+            const frontHipPointX = cfAnchorX - frontHipDistPixels;
+            const frontHipPointY = hipLineY;
+
+            const frontHipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            frontHipCircle.setAttribute('cx', frontHipPointX);
+            frontHipCircle.setAttribute('cy', frontHipPointY);
+            frontHipCircle.setAttribute('r', '5.5');
+            frontHipCircle.setAttribute('fill', '#0284c7');
+            bodiceGroup.appendChild(frontHipCircle);
+
+            // --- STEP 28: True Bust Line ---
+            const trueBustLineY = bustLineY + (2.0 * scaleFactor);
+            const trueBustLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            trueBustLine.setAttribute('x1', 50);
+            trueBustLine.setAttribute('y1', trueBustLineY);
+            trueBustLine.setAttribute('x2', cfAnchorX);
+            trueBustLine.setAttribute('y2', trueBustLineY);
+            trueBustLine.setAttribute('stroke', '#64748b');
+            trueBustLine.setAttribute('stroke-width', '1.25');
+            trueBustLine.setAttribute('stroke-dasharray', '5 3');
+            bodiceGroup.appendChild(trueBustLine);
+
             // --- STEP 29: Basic Waist Shaping ---
-            // Lower the front waistline by 0.5 inches (1.5 cm)
             const loweredFrontWaistY = waistLineY + (0.5 * scaleFactor);
             const loweredWaistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             loweredWaistLine.setAttribute('x1', 50);
@@ -2023,8 +2029,6 @@
             loweredWaistLine.setAttribute('stroke', '#e11d48');
             loweredWaistLine.setAttribute('stroke-width', '1.5');
             bodiceGroup.appendChild(loweredWaistLine);
-            
-            appendLabel(bodiceGroup, 'Step 29: Lowered Front Waist Line', cfAnchorX - 120, loweredFrontWaistY + 14, '#e11d48', '10', '600', false);
             
             // --- STEP 30: Waist Dart Placement: Front Dart: measure 1/4 * chest width from CF, length 10 inches (25 cm) centered across the waistline
             const frontDartDistX = cfAnchorX - (((chestWidthVal / 4.0)) * scaleFactor);
