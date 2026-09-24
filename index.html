@@ -1980,18 +1980,33 @@
             appendLabel(bodiceGroup, `Step 25: Point Y (${yDistInches.toFixed(2)}" at 45º)`, pointY_X - 60, pointY_Y - 12, '#0d9488', '11', 'bold', true);
 
 
-// --- STEP 26: Waist Line ---
-            const backWaistMeasurementInches = parseFloat(document.getElementById('backNeckToWaist').value) || 15.5;
-            const backWaistPixels = backWaistMeasurementInches * scaleFactor;
-            const waistLineY = napeLineY + backWaistPixels;
+/// --- STEP 26: Waist Line Calculation & Drawing ---
+const backNeckToWaistVal = parseFloat(document.getElementById('backNeckToWaist').value) || 15.5;
+const backNeckToWaistEaseVal = parseFloat(document.getElementById('backNeckToWaistEase').value) || 0.0;
+const totalBackWaistLength = backNeckToWaistVal + backNeckToWaistEaseVal;
 
-            const waistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            waistLine.setAttribute('x1', 50); waistLine.setAttribute('y1', waistLineY);
-            waistLine.setAttribute('x2', 50 + bWidth); waistLine.setAttribute('y2', waistLineY);
-            waistLine.setAttribute('stroke', '#c25e6f');
-            waistLine.setAttribute('stroke-width', '1.75');
-            waistLine.setAttribute('stroke-dasharray', '5 3');
-            bodiceGroup.appendChild(waistLine);
+const waistLineY = napeLineY + (totalBackWaistLength * scaleFactor);
+
+const waistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+waistLine.setAttribute('x1', 50); 
+waistLine.setAttribute('y1', waistLineY);
+waistLine.setAttribute('x2', 50 + bWidth); 
+waistLine.setAttribute('y2', waistLineY);
+waistLine.setAttribute('stroke', '#c25e6f');
+waistLine.setAttribute('stroke-width', '1.5');
+waistLine.setAttribute('stroke-dasharray', '6 3');
+bodiceGroup.appendChild(waistLine);
+
+appendLabel(
+    bodiceGroup, 
+    `Waist Line (${totalBackWaistLength.toFixed(2)}" / ${(totalBackWaistLength * 2.54).toFixed(1)}cm down from Nape)`, 
+    60, 
+    waistLineY, 
+    '#c25e6f', 
+    '11', 
+    '600', 
+    true
+);
 
             appendLabel(bodiceGroup, `Step 26: Waist Line (${backWaistMeasurementInches.toFixed(2)}" / ${(backWaistMeasurementInches * 2.54).toFixed(1)}cm down from Nape)`, 60, waistLineY - 8, '#c25e6f', '11', 'bold', true);
 // --- STEP 27: Front Hip Point ---
@@ -2050,7 +2065,7 @@
             appendLabel(bodiceGroup, 'Step 28: Point X (True Bust Point)', pointXX + 12, pointXY, '#7c3aed', '11', 'bold', false);
 // --- NEW REQUIREMENT: STEP 29 IMPLEMENTATION ---
 // Draw Point LW below the intersection point of the Waist line and Center front line by a half an inch (1.5 cm) for size 32 bust or up to one inch (2.5 cm) in larger sizes.
-waistLineY = 50 + (backLengthVal * scaleFactor);
+// (waistLineY is inherited directly from Step 26)
 const cfWaistIntersectionX = cfAnchorX;
 const cfWaistIntersectionY = waistLineY;
 
@@ -2079,15 +2094,16 @@ const cbWaistIntersectionX = 50;
 const cbWaistIntersectionY = waistLineY;
 
 const lowerWaistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-lowerWaistLine.setAttribute('x1', cbWaistIntersectionX); lowerWaistLine.setAttribute('y1', cbWaistIntersectionY);
-lowerWaistLine.setAttribute('x2', pointLW_X); lowerWaistLine.setAttribute('y2', pointLW_Y);
+lowerWaistLine.setAttribute('x1', cbWaistIntersectionX); 
+lowerWaistLine.setAttribute('y1', cbWaistIntersectionY);
+lowerWaistLine.setAttribute('x2', pointLW_X); 
+lowerWaistLine.setAttribute('y2', pointLW_Y);
 lowerWaistLine.setAttribute('stroke', '#0284c7');
 lowerWaistLine.setAttribute('stroke-width', '2');
 lowerWaistLine.setAttribute('stroke-dasharray', '4 2');
 bodiceGroup.appendChild(lowerWaistLine);
 
 appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true);
-            
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
