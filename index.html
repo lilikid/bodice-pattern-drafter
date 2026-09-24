@@ -2108,7 +2108,46 @@ lowerWaistLine.setAttribute('stroke-width', '2');
 lowerWaistLine.setAttribute('stroke-dasharray', '4 2');
 bodiceGroup.appendChild(lowerWaistLine);
 
-appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true);    // --- 2. SLEEVE BLOCK ---
+appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true); 
+
+
+            // --- STEP 30: Front Chest Width & Front Underarm Point ---
+            const rawChestWidth = parseFloat(document.getElementById('chestWidth').value) || 13.0;
+            const chestWidthEaseVal = parseFloat(document.getElementById('chestWidthEase').value) || 0.0;
+            const halfChestWidthVal = rawChestWidth / 2.0;
+            const measuredChestWidthDistance = (halfChestWidthVal + chestWidthEaseVal) * scaleFactor;
+            
+            // Reference Back Width inputs as well to ensure complete synchronization
+            const rawBackWidth = parseFloat(document.getElementById('backWidth').value) || 14.0;
+            const backWidthEaseVal = parseFloat(document.getElementById('backWidthEase').value) || 0.25;
+            const halfBackWidthVal = rawBackWidth / 2.0;
+            const measuredBackWidthDistance = (halfBackWidthVal + backWidthEaseVal) * scaleFactor;
+
+            // Calculate Front Chest Point measuring inward from Center Front (CF)
+            const frontChestPointX = (50 + bWidth) - measuredChestWidthDistance;
+            const chestLineY = bustLineY;
+
+            const chestWidthMark = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            chestWidthMark.setAttribute('cx', frontChestPointX);
+            chestWidthMark.setAttribute('cy', chestLineY);
+            chestWidthMark.setAttribute('r', '4.5');
+            chestWidthMark.setAttribute('fill', '#0284c7');
+            bodiceGroup.appendChild(chestWidthMark);
+
+            appendLabel(
+                bodiceGroup, 
+                `Step 30: Front Chest Width (${halfChestWidthVal.toFixed(2)}" + ${chestWidthEaseVal.toFixed(3)}" ease | Back Ref: ${halfBackWidthVal.toFixed(2)}" + ${backWidthEaseVal.toFixed(3)}" ease)`, 
+                frontChestPointX - 160, 
+                chestLineY - 15, 
+                '#0284c7', 
+                '10', 
+                'bold', 
+                true
+            );
+
+            
+            
+            // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
             sleeveGroup.innerHTML = '';
