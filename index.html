@@ -2022,6 +2022,33 @@
             const step27MidX = (frontUnderarmPointX + frontHipPointX) / 2;
             const step27MidY = (frontUnderarmPointY + frontHipPointY) / 2;
             appendLabel(bodiceGroup, 'Step 27: Provisional Front Side Seam', step27MidX + 10, step27MidY, '#0891b2', '10', '600', false);
+// --- STEP 28: True Bust Line & Point X ---
+            const trueBustLineOffsetInches = 2.0; // 2 inches below the bust line
+            const trueBustLineOffsetPixels = trueBustLineOffsetInches * scaleFactor;
+            const trueBustLineY = bustLineY + trueBustLineOffsetPixels;
+
+            const trueBustLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            trueBustLine.setAttribute('x1', 50); trueBustLine.setAttribute('y1', trueBustLineY);
+            trueBustLine.setAttribute('x2', 50 + bWidth); trueBustLine.setAttribute('y2', trueBustLineY);
+            trueBustLine.setAttribute('stroke', '#7c3aed');
+            trueBustLine.setAttribute('stroke-width', '1.5');
+            trueBustLine.setAttribute('stroke-dasharray', '5 3');
+            bodiceGroup.appendChild(trueBustLine);
+
+            appendLabel(bodiceGroup, 'True Bust Line (2" below Bust Line)', 60, trueBustLineY, '#7c3aed', '11', '600', true);
+
+            const pointXX = pointGX;
+            const pointXY = trueBustLineY;
+
+            const pointXCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            pointXCircle.setAttribute('cx', pointXX);
+            pointXCircle.setAttribute('cy', pointXY);
+            pointXCircle.setAttribute('r', '5.5');
+            pointXCircle.setAttribute('fill', '#7c3aed');
+            bodiceGroup.appendChild(pointXCircle);
+
+            appendLabel(bodiceGroup, 'Step 28: Point X (True Bust Point)', pointXX + 12, pointXY, '#7c3aed', '11', 'bold', false);
+
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
