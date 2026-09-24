@@ -2049,44 +2049,44 @@
 
             appendLabel(bodiceGroup, 'Step 28: Point X (True Bust Point)', pointXX + 12, pointXY, '#7c3aed', '11', 'bold', false);
 // --- NEW REQUIREMENT: STEP 29 IMPLEMENTATION ---
-            // Draw Point LW below the intersection point of the Waist line and Center front line by a half an inch (1.5 cm) for size 32 bust or up to one inch (2.5 cm) in larger sizes.
-          waistLineY = 50 + (backLengthVal * scaleFactor);
-            const cfWaistIntersectionX = cfAnchorX;
-            const cfWaistIntersectionY = waistLineY;
+// Draw Point LW below the intersection point of the Waist line and Center front line by a half an inch (1.5 cm) for size 32 bust or up to one inch (2.5 cm) in larger sizes.
+let waistLineY = 50 + (backLengthVal * scaleFactor);
+const cfWaistIntersectionX = cfAnchorX;
+const cfWaistIntersectionY = waistLineY;
 
-            // Determine drop amount based on bust size
-            let lwDropInches = 0.5; // default for size 32 bust (1.5 cm)
-            if (totalBust > 32.0 && totalBust <= 36.0) {
-                lwDropInches = 0.75;
-            } else if (totalBust > 36.0) {
-                lwDropInches = 1.0; // up to one inch (2.5 cm) for larger sizes
-            }
-            const lwDropPixels = lwDropInches * scaleFactor;
-            const pointLW_X = cfWaistIntersectionX;
-            const pointLW_Y = cfWaistIntersectionY + lwDropPixels;
+// Determine drop amount based on bust size
+let lwDropInches = 0.5; // default for size 32 bust (1.5 cm)
+if (totalBust > 32.0 && totalBust <= 36.0) {
+    lwDropInches = 0.75;
+} else if (totalBust > 36.0) {
+    lwDropInches = 1.0; // up to one inch (2.5 cm) for larger sizes
+}
+const lwDropPixels = lwDropInches * scaleFactor;
+const pointLW_X = cfWaistIntersectionX;
+const pointLW_Y = cfWaistIntersectionY + lwDropPixels;
 
-            const pointLW_Circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            pointLW_Circle.setAttribute('cx', pointLW_X);
-            pointLW_Circle.setAttribute('cy', pointLW_Y);
-            pointLW_Circle.setAttribute('r', '5.5');
-            pointLW_Circle.setAttribute('fill', '#0284c7');
-            bodiceGroup.appendChild(pointLW_Circle);
+const pointLW_Circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+pointLW_Circle.setAttribute('cx', pointLW_X);
+pointLW_Circle.setAttribute('cy', pointLW_Y);
+pointLW_Circle.setAttribute('r', '5.5');
+pointLW_Circle.setAttribute('fill', '#0284c7');
+bodiceGroup.appendChild(pointLW_Circle);
 
-            appendLabel(bodiceGroup, `Step 29: Point LW (${lwDropInches.toFixed(2)}" / ${(lwDropInches * 2.54).toFixed(1)}cm below waist)`, pointLW_X - 160, pointLW_Y + 14, '#0284c7', '11', 'bold', false);
+appendLabel(bodiceGroup, `Step 29: Point LW (${lwDropInches.toFixed(2)}" / ${(lwDropInches * 2.54).toFixed(1)}cm below waist)`, pointLW_X - 160, pointLW_Y + 14, '#0284c7', '11', 'bold', false);
 
-            // Draw Lower Waist Line by connecting the intersection point of the Center Back Line and the Waist Line with the intersection point of the Waist line and the point LW.
-            const cbWaistIntersectionX = 50;
-            const cbWaistIntersectionY = waistLineY;
+// Draw Lower Waist Line by connecting the intersection point of the Center Back Line and the Waist Line with the intersection point of the Waist line and the point LW.
+const cbWaistIntersectionX = 50;
+const cbWaistIntersectionY = waistLineY;
 
-            const lowerWaistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            lowerWaistLine.setAttribute('x1', cbWaistIntersectionX); lowerWaistLine.setAttribute('y1', cbWaistIntersectionY);
-            lowerWaistLine.setAttribute('x2', pointLW_X); lowerWaistLine.setAttribute('y2', pointLW_Y);
-            lowerWaistLine.setAttribute('stroke', '#0284c7');
-            lowerWaistLine.setAttribute('stroke-width', '2');
-            lowerWaistLine.setAttribute('stroke-dasharray', '4 2');
-            bodiceGroup.appendChild(lowerWaistLine);
+const lowerWaistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+lowerWaistLine.setAttribute('x1', cbWaistIntersectionX); lowerWaistLine.setAttribute('y1', cbWaistIntersectionY);
+lowerWaistLine.setAttribute('x2', pointLW_X); lowerWaistLine.setAttribute('y2', pointLW_Y);
+lowerWaistLine.setAttribute('stroke', '#0284c7');
+lowerWaistLine.setAttribute('stroke-width', '2');
+lowerWaistLine.setAttribute('stroke-dasharray', '4 2');
+bodiceGroup.appendChild(lowerWaistLine);
 
-            appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true);
+appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true);
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
