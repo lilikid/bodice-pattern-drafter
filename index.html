@@ -2031,7 +2031,7 @@
             loweredWaistLine.setAttribute('stroke-width', '1.5');
             bodiceGroup.appendChild(loweredWaistLine);
             
-           // --- STEP 30: Waist Dart Placement ---
+// --- STEP 30: Waist Dart Placement ---
             const chestWidthVal = parseFloat(document.getElementById('chestWidth').value) || 14.0;
             const backWidthVal = parseFloat(document.getElementById('backWidth').value) || 14.0;
 
@@ -2082,6 +2082,7 @@
             bodiceGroup.appendChild(backDartCircle);
 
             appendLabel(bodiceGroup, 'Step 30: Back Waist Dart Guideline (1/4 Back Width from CB, 12" long)', backDartDistX - 250, backDartStartY + 15, '#f97316', '10', '600', false);
+            
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
