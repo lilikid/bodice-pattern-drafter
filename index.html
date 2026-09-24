@@ -2032,10 +2032,9 @@
             bodiceGroup.appendChild(loweredWaistLine);
             
 // --- STEP 30: Waist Dart Placement ---
-            const chestWidthVal = parseFloat(document.getElementById('chestWidth').value) || 14.0;
-            const backWidthVal = parseFloat(document.getElementById('backWidth').value) || 14.0;
-
-            // Front Dart: measure 1/4 * chest width from CF, length 10 inches (25 cm) centered across the waistline
+            chestWidthVal = parseFloat(document.getElementById('chestWidth').value) || 14.0;
+            backWidthVal = parseFloat(document.getElementById('backWidth').value) || 14.0;
+            
             const frontDartDistX = cfAnchorX - (((chestWidthVal / 4.0)) * scaleFactor);
             const frontDartStartY = loweredFrontWaistY - (5.0 * scaleFactor); // 5 inches up
             const frontDartEndY = loweredFrontWaistY + (5.0 * scaleFactor);   // 5 inches down (Total 10" length)
@@ -2082,7 +2081,7 @@
             bodiceGroup.appendChild(backDartCircle);
 
             appendLabel(bodiceGroup, 'Step 30: Back Waist Dart Guideline (1/4 Back Width from CB, 12" long)', backDartDistX - 250, backDartStartY + 15, '#f97316', '10', '600', false);
-            
+          
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
