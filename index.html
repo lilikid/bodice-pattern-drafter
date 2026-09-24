@@ -2111,42 +2111,37 @@ bodiceGroup.appendChild(lowerWaistLine);
 appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true); 
 
 
-// --- STEP 30: Front Chest Width & Front Underarm Point ---
-            // Directly pull fresh values from the HTML form inputs every execution
-            const chestWidthInput = parseFloat(document.getElementById('chestWidth').value) || 13.0;
-            const chestWidthEaseInput = parseFloat(document.getElementById('chestWidthEase').value) || 0.0;
-            const halfChestVal = chestWidthInput / 2.0;
-            
-            // Guideline calculation strictly without ease using live inputs
-            const guidelineChestWidthDistance = halfChestVal * scaleFactor;
-            
-            // Reference Back Width inputs directly from HTML form elements
-            const backWidthInput = parseFloat(document.getElementById('backWidth').value) || 14.0;
-            const backWidthEaseInput = parseFloat(document.getElementById('backWidthEase').value) || 0.25;
-            const halfBackVal = backWidthInput / 2.0;
-            const guidelineBackWidthDistance = halfBackVal * scaleFactor;
+// --- STEP 30: رسم خط عمودي يقطع خط الخصر نزولاً بدءاً من النقطة X وتسمية النقطة الناتجة A ---
+// (تأكد من تحديد إحداثيات النقطة X بناءً على الخطوات السابقة في الباترون)
+const pointXX = typeof window.pointXX !== 'undefined' ? window.pointXX : 150; // إحداثي السينات للنقطة X
+const pointXY = typeof window.pointXY !== 'undefined' ? window.pointXY : 150; // إحداثي الصادات للنقطة X
 
-            // Calculate Front Chest Point measuring inward from Center Front (CF) using pure measurements
-            const frontChestPointX = (50 + bWidth) - guidelineChestWidthDistance;
-            const chestLineY = bustLineY;
+// تحديد موقع خط الخصر Y
+const waistLineY = 50 + bHeight; 
+const step30Length = waistLineY - pointXY + (2.0 * scaleFactor); // يمتد للأسفل متخطياً خط الخصر
 
-            const chestWidthMark = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            chestWidthMark.setAttribute('cx', frontChestPointX);
-            chestWidthMark.setAttribute('cy', chestLineY);
-            chestWidthMark.setAttribute('r', '4.5');
-            chestWidthMark.setAttribute('fill', '#0284c7');
-            bodiceGroup.appendChild(chestWidthMark);
+const step30VerticalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+step30VerticalLine.setAttribute('x1', pointXX);
+step30VerticalLine.setAttribute('y1', pointXY);
+step30VerticalLine.setAttribute('x2', pointXX);
+step30VerticalLine.setAttribute('y2', pointXY + step30Length);
+step30VerticalLine.setAttribute('stroke', '#0284c7');
+step30VerticalLine.setAttribute('stroke-width', '1.75');
+step30VerticalLine.setAttribute('stroke-dasharray', '3 3');
+bodiceGroup.appendChild(step30VerticalLine);
 
-            appendLabel(
-                bodiceGroup, 
-                `Step 30: Front Chest Width (${halfChestVal.toFixed(2)}" net | Ease: +${chestWidthEaseInput.toFixed(3)}" | Back Ref: ${halfBackVal.toFixed(2)}" net)`, 
-                frontChestPointX - 160, 
-                chestLineY - 15, 
-                '#0284c7', 
-                '10', 
-                'bold', 
-                true
-            );
+// إنشاء النقطة A عند تقاطع الخط العمودي مع خط الخصر
+const pointAX = pointXX;
+const pointAY = waistLineY;
+
+const pointACircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+pointACircle.setAttribute('cx', pointAX);
+pointACircle.setAttribute('cy', pointAY);
+pointACircle.setAttribute('r', '5.5');
+pointACircle.setAttribute('fill', '#10b981'); // لون مميز للنقطة A
+bodiceGroup.appendChild(pointACircle);
+
+appendLabel(bodiceGroup, 'Step 30: Point A', pointAX + 12, pointAY, '#10b981', '11', 'bold', true);
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
