@@ -2110,7 +2110,20 @@ bodiceGroup.appendChild(lowerWaistLine);
 
 appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true); 
 
+// STEP 30: Draw vertical line from Point X to FDP, length 10 inches long and centered at FDP
+            const lineLengthInches = 10.0;
+            const lineLengthPixels = lineLengthInches * scaleFactor;
+            const halfLen = lineLengthPixels / 2;
 
+            const step30Line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            step30Line.setAttribute('x1', fdpX); step30Line.setAttribute('y1', fdpY - halfLen);
+            step30Line.setAttribute('x2', fdpX); step30Line.setAttribute('y2', fdpY + halfLen);
+            step30Line.setAttribute('stroke', '#ec4899');
+            step30Line.setAttribute('stroke-width', '2.5');
+            bodiceGroup.appendChild(step30Line);
+
+            appendLabel(bodiceGroup, 'Step 30: 10" Vertical Line (Centered FDP)', fdpX + 12, fdpY - halfLen, '#ec4899', '10', 'bold', true);
+        
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
