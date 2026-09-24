@@ -1814,7 +1814,7 @@
             // Length calculation for Chest line: half Chest Width + Chest ease + distance between intersection points with G-B and G-N lines
             const chestWidthValStep22 = parseFloat(document.getElementById('chestWidth').value) || 13.0;
             const chestEaseVal = 0; // or configured ease
-            const halfChestWidthVal = (chestWidthValStep22 / 2.0) + chestEaseVal;
+            const halfChestWidthVal = (chestWidthValStep22 / 2.0);
 
             const chestLineWidthInches = halfChestWidthVal + 1.25; 
             const chestLineWidthPixels = chestLineWidthInches * scaleFactor;
@@ -2114,8 +2114,8 @@ appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) 
             // --- STEP 30: Front Chest Width & Front Underarm Point ---
             const rawChestWidth = parseFloat(document.getElementById('chestWidth').value) || 13.0;
             const chestWidthEaseVal = parseFloat(document.getElementById('chestWidthEase').value) || 0.0;
-            const halfChestWidthVal = rawChestWidth / 2.0;
-            const measuredChestWidthDistance = (halfChestWidthVal + chestWidthEaseVal) * scaleFactor;
+            halfChestWidthVal = rawChestWidth / 2.0;
+            const measuredChestWidthDistance = (halfChestWidthVal) * scaleFactor;
             
             // Reference Back Width inputs as well to ensure complete synchronization
             const rawBackWidth = parseFloat(document.getElementById('backWidth').value) || 14.0;
