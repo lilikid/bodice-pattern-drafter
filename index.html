@@ -1038,6 +1038,7 @@
             // --- 1. BODICE BLOCK (CB & CF Anchor Points Established First) ---
             const bodiceGroup = document.querySelector('#svg-bodice .pattern-group-sub');
             bodiceGroup.innerHTML = '';
+            const cbRefX = typeof cbX !== 'undefined' ? cbX : (typeof cbAnchorX !== 'undefined' ? cbAnchorX : 50);
             
             const totalBust = parseFloat(document.getElementById('bust').value) + parseFloat(document.getElementById('bustEase').value);
             const hipVal = parseFloat(document.getElementById('hip').value);
@@ -2055,7 +2056,7 @@
             appendLabel(bodiceGroup, 'Step 30: Front Waist Dart Guideline (1/4 Chest Width from CF, 10" long)', frontDartDistX + 8, frontDartStartY + 15, '#f97316', '10', '600', false);
 
             // Back Dart: measure 1/4 * back width from CB, length 12 inches (30 cm) centered across the waistline
-            const backDartDistX = cbAnchorX + (((backWidthVal / 4.0)) * scaleFactor);
+            const backDartDistX = cbRefX + (((backWidthVal / 4.0)) * scaleFactor);
             const backDartStartY = waistLineY - (6.0 * scaleFactor); // 6 inches up
             const backDartEndY = waistLineY + (6.0 * scaleFactor);   // 6 inches down (Total 12" length)
 
