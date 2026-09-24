@@ -2048,54 +2048,30 @@
             bodiceGroup.appendChild(pointXCircle);
 
             appendLabel(bodiceGroup, 'Step 28: Point X (True Bust Point)', pointXX + 12, pointXY, '#7c3aed', '11', 'bold', false);
-
-            // --- STEP 29: Lower the front waistline & side seam reduction (Points V and C) ---
-            const baseSize32Bust = 32.0;
-            let frontWaistDropInches = 0.5; // for size 32 bust (1.5 cm)
-            if (totalBust > baseSize32Bust) {
-                frontWaistDropInches = Math.min(1.0, 0.5 + ((totalBust - baseSize32Bust) / 16.0) * 0.5); // up to 1 inch (2.5 cm) for larger sizes
+// --- STEP 29: Lower Waist Line ---
+            // Draw another Waist line by lowering the front Waist Line across the CF vertical line by a half an inch (1.5 cm) for size 32 bust or up to one inch (2.5 cm) in larger sizes. Name this line Lower Waist line.
+            const standardWaistLineY = 50 + bHeight - (waistToHipVal * scaleFactor);
+            // Calculate drop amount based on bust size: 0.5 inches (1.5 cm) for 32 bust, up to 1 inch (2.5 cm) for larger sizes
+            let waistDropInches = 0.5;
+            if (totalBust >= 36.0) {
+                waistDropInches = 1.0;
+            } else if (totalBust > 32.0) {
+                waistDropInches = 0.5 + ((totalBust - 32.0) / 4.0) * 0.5;
             }
-            const frontWaistDropPixels = frontWaistDropInches * scaleFactor;
-            const loweredWaistY = hipLineY - (waistToHipVal * scaleFactor) + frontWaistDropPixels;
+            const waistDropPixels = waistDropInches * scaleFactor;
+            const lowerWaistLineY = standardWaistLineY + waistDropPixels;
 
-            const loweredFrontWaistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            loweredFrontWaistLine.setAttribute('x1', cfAnchorX - quarterHipPixels); loweredFrontWaistLine.setAttribute('y1', loweredWaistY);
-            loweredFrontWaistLine.setAttribute('x2', cfAnchorX); loweredFrontWaistLine.setAttribute('y2', loweredWaistY);
-            loweredFrontWaistLine.setAttribute('stroke', '#0284c7');
-            loweredFrontWaistLine.setAttribute('stroke-width', '1.5');
-            loweredFrontWaistLine.setAttribute('stroke-dasharray', '4 2');
-            bodiceGroup.appendChild(loweredFrontWaistLine);
+            const lowerWaistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            lowerWaistLine.setAttribute('x1', 50); lowerWaistLine.setAttribute('y1', lowerWaistLineY);
+            lowerWaistLine.setAttribute('x2', 50 + bWidth); lowerWaistLine.setAttribute('y2', lowerWaistLineY);
+            lowerWaistLine.setAttribute('stroke', '#059669'); // Emerald green
+            lowerWaistLine.setAttribute('stroke-width', '2');
+            lowerWaistLine.setAttribute('stroke-dasharray', '6 3');
+            bodiceGroup.appendChild(lowerWaistLine);
 
-            appendLabel(bodiceGroup, `Step 29: Lowered Front Waistline (${frontWaistDropInches.toFixed(2)}" / ${(frontWaistDropInches * 2.54).toFixed(1)}cm down)`, cfAnchorX - quarterHipPixels, loweredWaistY - 10, '#0284c7', '10', 'bold', true);
+            appendLabel(bodiceGroup, `Step 29: Lower Waist Line (${waistDropInches.toFixed(2)}" / ${(waistDropInches * 2.54).toFixed(1)}cm lowered)`, 60, lowerWaistLineY - 10, '#059669', '11', 'bold', true);
 
-            // Side seam reductions: 3/4 inch (2 cm) on the back -> Point V; 1/2 inch (1.5 cm) on the front -> Point C
-            const backReductionInches = 0.75; // 3/4 inch (2 cm)
-            const backReductionPixels = backReductionInches * scaleFactor;
-            const pointVX = backHipPointX - backReductionPixels;
-            const pointVY = hipLineY;
-
-            const pointVCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            pointVCircle.setAttribute('cx', pointVX);
-            pointVCircle.setAttribute('cy', pointVY);
-            pointVCircle.setAttribute('r', '5.5');
-            pointVCircle.setAttribute('fill', '#16a34a'); // Green
-            bodiceGroup.appendChild(pointVCircle);
-
-            appendLabel(bodiceGroup, 'Step 29: Point V (Back Side Seam - ¾" / 2cm reduction)', pointVX - 30, pointVY + 22, '#16a34a', '11', 'bold', false);
-
-            const frontReductionInches = 0.5; // 1/2 inch (1.5 cm)
-            const frontReductionPixels = frontReductionInches * scaleFactor;
-            const pointCX = cfAnchorX - quarterHipPixels + frontReductionPixels;
-            const pointCY = loweredWaistY;
-
-            const pointCCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            pointCCircle.setAttribute('cx', pointCX);
-            pointCCircle.setAttribute('cy', pointCY);
-            pointCCircle.setAttribute('r', '5.5');
-            pointCCircle.setAttribute('fill', '#ea580c'); // Orange
-            bodiceGroup.appendChild(pointCCircle);
-
-            appendLabel(bodiceGroup, 'Step 29: Point C (Front Side Seam - ½" / 1.5cm reduction)', pointCX + 10, pointCY + 22, '#ea580c', '11', 'bold', false);
+        
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
