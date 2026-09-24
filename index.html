@@ -2111,8 +2111,7 @@ bodiceGroup.appendChild(lowerWaistLine);
 appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true); 
 
 
-            // --- STEP 30: Front Chest Width & Front Underarm Point ---
-            // Extract raw inputs and compute width WITHOUT ease for guideline positioning
+ // --- STEP 30: Front Chest Width & Front Underarm Point ---
             rawChestWidth = parseFloat(document.getElementById('chestWidth').value) || 13.0;
             chestWidthEaseVal = parseFloat(document.getElementById('chestWidthEase').value) || 0.0;
             halfChestWidthVal = rawChestWidth / 2.0;
@@ -2120,10 +2119,10 @@ appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) 
             // Guideline calculation strictly without ease
             const guidelineChestWidthDistance = halfChestWidthVal * scaleFactor;
             
-            // Reference Back Width inputs safely (without ease for layout positioning)
-            const rawBackWidthVal = parseFloat(document.getElementById('backWidth').value) || 14.0;
-            const backWidthEaseVal = parseFloat(document.getElementById('backWidthEase').value) || 0.25;
-            const halfBackWidthVal = rawBackWidthVal / 2.0;
+            // Reference Back Width inputs safely (reusing variables without 'const' to prevent redeclaration errors)
+            rawBackWidthVal = parseFloat(document.getElementById('backWidth').value) || 14.0;
+            backWidthEaseVal = parseFloat(document.getElementById('backWidthEase').value) || 0.25;
+            halfBackWidthVal = rawBackWidthVal / 2.0;
             const guidelineBackWidthDistance = halfBackWidthVal * scaleFactor;
 
             // Calculate Front Chest Point measuring inward from Center Front (CF) using pure measurements
