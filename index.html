@@ -1037,6 +1037,10 @@
             // --- 1. BODICE BLOCK (CB & CF Anchor Points Established First) ---
             const bodiceGroup = document.querySelector('#svg-bodice .pattern-group-sub');
             bodiceGroup.innerHTML = '';
+
+            let pointXX;
+            let pointXY;
+            let waistLineY;
             
             const totalBust = parseFloat(document.getElementById('bust').value) + parseFloat(document.getElementById('bustEase').value);
             const hipVal = parseFloat(document.getElementById('hip').value);
