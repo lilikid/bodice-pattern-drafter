@@ -2110,20 +2110,22 @@ bodiceGroup.appendChild(lowerWaistLine);
 
 appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true); 
 
-// STEP 30: Draw vertical line from Point X to FDP, length 10 inches long and centered at FDP
-            const lineLengthInches = 10.0;
-            const lineLengthPixels = lineLengthInches * scaleFactor;
-            const halfLen = lineLengthPixels / 2;
+// --- STEP 30: Vertical Line from Point X Crossing Waist Line ---
+// Using pointXX and pointXY calculated in Step 28 without modifying them
+const step30LineEndY = hipLineY + 25; // Extends down past the waist line toward the hip line
 
-            const step30Line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            step30Line.setAttribute('x1', fdpX); step30Line.setAttribute('y1', fdpY - halfLen);
-            step30Line.setAttribute('x2', fdpX); step30Line.setAttribute('y2', fdpY + halfLen);
-            step30Line.setAttribute('stroke', '#ec4899');
-            step30Line.setAttribute('stroke-width', '2.5');
-            bodiceGroup.appendChild(step30Line);
+const verticalLineFromPointX = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+verticalLineFromPointX.setAttribute('x1', pointXX);
+verticalLineFromPointX.setAttribute('y1', pointXY);
+verticalLineFromPointX.setAttribute('x2', pointXX);
+verticalLineFromPointX.setAttribute('y2', step30LineEndY);
+verticalLineFromPointX.setAttribute('stroke', '#7c3aed');
+verticalLineFromPointX.setAttribute('stroke-width', '1.5');
+verticalLineFromPointX.setAttribute('stroke-dasharray', '4 4');
+bodiceGroup.appendChild(verticalLineFromPointX);
 
-            appendLabel(bodiceGroup, 'Step 30: 10" Vertical Line (Centered FDP)', fdpX + 12, fdpY - halfLen, '#ec4899', '10', 'bold', true);
-        
+// Label positioned near the waist line intersection
+appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
