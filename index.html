@@ -2011,8 +2011,9 @@
             tBustLine.setAttribute('stroke', '#64748b');
             tBustLine.setAttribute('stroke-width', '1.25');
             bodiceGroup.appendChild(tBustLine);
+            
             // --- STEP 29: Basic Waist Shaping ---
-            // Lower the front waistline by 0.5 inches (1.5 cm)
+            Lower the front waistline by 0.5 inches (1.5 cm)
             const loweredFrontWaistY = waistLineY + (0.5 * scaleFactor);
             
             const loweredWaistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -2025,8 +2026,7 @@
             bodiceGroup.appendChild(loweredWaistLine);
             appendLabel(bodiceGroup, 'Step 29: Lowered Front Waist Line', cfAnchorX - 120, loweredFrontWaistY + 14, '#e11d48', '10', '600', false);
 
-            // --- STEP 30: Waist Dart Placement ---
-            // Front Dart: measure 1/4 * chest width from CF, length 10 inches (25 cm) centered across the waistline
+            // --- STEP 30: Waist Dart Placement: Front Dart: measure 1/4 * chest width from CF, length 10 inches (25 cm) centered across the waistline
             const frontDartDistX = cfAnchorX - (((chestWidthVal / 4.0)) * scaleFactor);
             const frontDartStartY = loweredFrontWaistY - (5.0 * scaleFactor); // 5 inches up
             const frontDartEndY = loweredFrontWaistY + (5.0 * scaleFactor);   // 5 inches down (Total 10" length)
