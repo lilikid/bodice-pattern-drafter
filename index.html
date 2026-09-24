@@ -2111,40 +2111,6 @@ bodiceGroup.appendChild(lowerWaistLine);
 appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true); 
 
 
-// --- STEP 30: Draw a vertical line downward from Point X to intersect the waistline and label it Point FDP ---
-// Utilizing the existing Point X coordinates calculated in previous steps as a reference:
-const fdpX = typeof pointX !== 'undefined' ? pointX : 150; 
-const fdpY = typeof pointY !== 'undefined' ? pointY : 150; 
-
-// Define the waistline Y coordinate
-const waistLineY = 50 + bHeight; 
-const step30Length = waistLineY - fdpY + (2.0 * scaleFactor); // Extends downward past the waistline
-
-// Create and append the vertical dashed line
-const step30VerticalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-step30VerticalLine.setAttribute('x1', fdpX);
-step30VerticalLine.setAttribute('y1', fdpY);
-step30VerticalLine.setAttribute('x2', fdpX);
-step30VerticalLine.setAttribute('y2', fdpY + step30Length);
-step30VerticalLine.setAttribute('stroke', '#0284c7');
-step30VerticalLine.setAttribute('stroke-width', '1.75');
-step30VerticalLine.setAttribute('stroke-dasharray', '3 3');
-bodiceGroup.appendChild(step30VerticalLine);
-
-// Create Point FDP at the intersection of the vertical line and the waistline
-const pointFDPX = fdpX;
-const pointFDPY = waistLineY;
-
-const pointFDPCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-pointFDPCircle.setAttribute('cx', pointFDPX);
-pointFDPCircle.setAttribute('cy', pointFDPY);
-pointFDPCircle.setAttribute('r', '5.5');
-pointFDPCircle.setAttribute('fill', '#10b981'); // Distinct color for Point FDP
-bodiceGroup.appendChild(pointFDPCircle);
-
-// Add the text label for Point FDP
-appendLabel(bodiceGroup, 'Step 30: Point FDP', pointFDPX + 12, pointFDPY, '#10b981', '11', 'bold', true);
-
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
