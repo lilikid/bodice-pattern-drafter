@@ -2111,37 +2111,40 @@ bodiceGroup.appendChild(lowerWaistLine);
 appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true); 
 
 
-// --- STEP 30: رسم خط عمودي يقطع خط الخصر نزولاً بدءاً من النقطة X وتسمية النقطة الناتجة A ---
-// (تأكد من تحديد إحداثيات النقطة X بناءً على الخطوات السابقة في الباترون)
-const pointXX = typeof window.pointXX !== 'undefined' ? window.pointXX : 150; // إحداثي السينات للنقطة X
-const pointXY = typeof window.pointXY !== 'undefined' ? window.pointXY : 150; // إحداثي الصادات للنقطة X
+// --- STEP 30: Draw a vertical line downward from Point X to intersect the waistline and label it Point FDP ---
+// Utilizing the existing Point X coordinates calculated in previous steps as a reference:
+const fdpX = typeof pointX !== 'undefined' ? pointX : 150; 
+const fdpY = typeof pointY !== 'undefined' ? pointY : 150; 
 
-// تحديد موقع خط الخصر Y
+// Define the waistline Y coordinate
 const waistLineY = 50 + bHeight; 
-const step30Length = waistLineY - pointXY + (2.0 * scaleFactor); // يمتد للأسفل متخطياً خط الخصر
+const step30Length = waistLineY - fdpY + (2.0 * scaleFactor); // Extends downward past the waistline
 
+// Create and append the vertical dashed line
 const step30VerticalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-step30VerticalLine.setAttribute('x1', pointXX);
-step30VerticalLine.setAttribute('y1', pointXY);
-step30VerticalLine.setAttribute('x2', pointXX);
-step30VerticalLine.setAttribute('y2', pointXY + step30Length);
+step30VerticalLine.setAttribute('x1', fdpX);
+step30VerticalLine.setAttribute('y1', fdpY);
+step30VerticalLine.setAttribute('x2', fdpX);
+step30VerticalLine.setAttribute('y2', fdpY + step30Length);
 step30VerticalLine.setAttribute('stroke', '#0284c7');
 step30VerticalLine.setAttribute('stroke-width', '1.75');
 step30VerticalLine.setAttribute('stroke-dasharray', '3 3');
 bodiceGroup.appendChild(step30VerticalLine);
 
-// إنشاء النقطة A عند تقاطع الخط العمودي مع خط الخصر
-const pointAX = pointXX;
-const pointAY = waistLineY;
+// Create Point FDP at the intersection of the vertical line and the waistline
+const pointFDPX = fdpX;
+const pointFDPY = waistLineY;
 
-const pointACircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-pointACircle.setAttribute('cx', pointAX);
-pointACircle.setAttribute('cy', pointAY);
-pointACircle.setAttribute('r', '5.5');
-pointACircle.setAttribute('fill', '#10b981'); // لون مميز للنقطة A
-bodiceGroup.appendChild(pointACircle);
+const pointFDPCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+pointFDPCircle.setAttribute('cx', pointFDPX);
+pointFDPCircle.setAttribute('cy', pointFDPY);
+pointFDPCircle.setAttribute('r', '5.5');
+pointFDPCircle.setAttribute('fill', '#10b981'); // Distinct color for Point FDP
+bodiceGroup.appendChild(pointFDPCircle);
 
-appendLabel(bodiceGroup, 'Step 30: Point A', pointAX + 12, pointAY, '#10b981', '11', 'bold', true);
+// Add the text label for Point FDP
+appendLabel(bodiceGroup, 'Step 30: Point FDP', pointFDPX + 12, pointFDPY, '#10b981', '11', 'bold', true);
+
             
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
