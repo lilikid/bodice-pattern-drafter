@@ -2064,18 +2064,23 @@ appendLabel(
 
             appendLabel(bodiceGroup, 'Step 28: Point X (True Bust Point)', pointXX + 12, pointXY, '#7c3aed', '11', 'bold', false);
 // --- NEW REQUIREMENT: STEP 29 IMPLEMENTATION ---
-// Draw Point LW below the intersection point of the Waist line and Center front line by a half an inch (1.5 cm) for size 32 bust or up to one inch (2.5 cm) in larger sizes.
-// (waistLineY is inherited directly from Step 26)
+// Draw Point LW below the intersection point of the Waist line and Center front line.
+// Baseline: 0.5 inch drop for UK 12 (~36" bust), less for smaller sizes, and higher for larger sizes up to 1 inch.
 const cfWaistIntersectionX = cfAnchorX;
 const cfWaistIntersectionY = waistLineY;
 
-// Determine drop amount based on bust size
-let lwDropInches = 0.5; // default for size 32 bust (1.5 cm)
-if (totalBust > 32.0 && totalBust <= 36.0) {
-    lwDropInches = 0.75;
-} else if (totalBust > 36.0) {
-    lwDropInches = 1.0; // up to one inch (2.5 cm) for larger sizes
+// Determine drop amount relative to UK 12 baseline (36.0" bust)
+let lwDropInches = 0.5; // Default for UK 12
+const uk12BustBaseline = 36.0; 
+
+if (totalBust < uk12BustBaseline) {
+    // Smaller than UK 12: scale down proportionally (minimum floor of 0.25 inches)
+    lwDropInches = Math.max(0.25, 0.5 - (uk12BustBaseline - totalBust) * 0.05);
+} else if (totalBust > uk12BustBaseline) {
+    // Larger than UK 12: scale up proportionally (capped at a maximum of 1.0 inch)
+    lwDropInches = Math.min(1.0, 0.5 + (totalBust - uk12BustBaseline) * 0.08);
 }
+
 const lwDropPixels = lwDropInches * scaleFactor;
 const pointLW_X = cfWaistIntersectionX;
 const pointLW_Y = cfWaistIntersectionY + lwDropPixels;
@@ -2089,7 +2094,7 @@ bodiceGroup.appendChild(pointLW_Circle);
 
 appendLabel(bodiceGroup, `Step 29: Point LW (${lwDropInches.toFixed(2)}" / ${(lwDropInches * 2.54).toFixed(1)}cm below waist)`, pointLW_X - 160, pointLW_Y + 14, '#0284c7', '11', 'bold', false);
 
-// Draw Lower Waist Line by connecting the intersection point of the Center Back Line and the Waist Line with the intersection point of the Waist line and the point LW.
+// Draw Lower Waist Line by connecting the intersection point of the Center Back Line and the Waist Line with Point LW
 const cbWaistIntersectionX = 50;
 const cbWaistIntersectionY = waistLineY;
 
@@ -2103,8 +2108,7 @@ lowerWaistLine.setAttribute('stroke-width', '2');
 lowerWaistLine.setAttribute('stroke-dasharray', '4 2');
 bodiceGroup.appendChild(lowerWaistLine);
 
-appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true);
-            // --- 2. SLEEVE BLOCK ---
+appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) / 2, (cbWaistIntersectionY + pointLW_Y) / 2 - 12, '#0284c7', '11', 'bold', true);    // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
             sleeveGroup.innerHTML = '';
