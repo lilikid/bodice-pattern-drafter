@@ -1071,14 +1071,14 @@
             appendLabel(bodiceGroup, 'CF (Center Front)', 50 + bWidth - 145, 42, '#0047AB', '12', 'bold', true);
 
             // STEP 1: Place Point CB & Point CF Anchor Points at Top Corners
-            const pointCB = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            pointCB = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             pointCB.setAttribute('cx', 50); pointCB.setAttribute('cy', 50); pointCB.setAttribute('r', 4.5);
             pointCB.setAttribute('fill', '#0047AB');
             bodiceGroup.appendChild(pointCB);
 
             appendLabel(bodiceGroup, 'CB (Center Back)', 60, 42, '#0047AB', '12', 'bold', true);
 
-            const pointCF = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            pointCF = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             pointCF.setAttribute('cx', 50 + bWidth); pointCF.setAttribute('cy', 50); pointCF.setAttribute('r', 4.5);
             pointCF.setAttribute('fill', '#0047AB');
             bodiceGroup.appendChild(pointCF);
