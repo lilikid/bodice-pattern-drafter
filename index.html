@@ -1054,6 +1054,9 @@
             const hipVal = parseFloat(document.getElementById('hip').value);
             const hipEaseVal = parseFloat(document.getElementById('hipEase').value);
             const backLengthVal = parseFloat(document.getElementById('backNeckToWaist').value);
+            const frontLengthVal = parseFloat(document.getElementById('frontNeckToWaist').value);
+            const frontLengthEaseVal = parseFloat(document.getElementById('frontNeckToWaistEase').value) || 0;
+            const totalFrontLength = frontLengthVal + frontLengthEaseVal;
             const waistToHipVal = parseFloat(document.getElementById('waistToHip').value);
 
             const bWidth = (((hipVal + hipEaseVal) / 2) + 4.0) * scaleFactor;
