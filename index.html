@@ -1989,7 +1989,7 @@ const backNeckToWaistVal = parseFloat(document.getElementById('backNeckToWaist')
 const backNeckToWaistEaseVal = parseFloat(document.getElementById('backNeckToWaistEase').value) || 0.0;
 const totalBackWaistLength = backNeckToWaistVal + backNeckToWaistEaseVal;
 
-const waistLineY = napeLineY + (totalBackWaistLength * scaleFactor);
+waistLineY = napeLineY + (totalBackWaistLength * scaleFactor);
 
 const waistLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 waistLine.setAttribute('x1', 50); 
