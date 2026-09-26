@@ -1047,7 +1047,17 @@
             const hipEaseVal = parseFloat(document.getElementById('hipEase').value);
             const backLengthVal = parseFloat(document.getElementById('backNeckToWaist').value);
             const waistToHipVal = parseFloat(document.getElementById('waistToHip').value);
+const totalWaist = parseFloat(document.getElementById('waist').value) + parseFloat(document.getElementById('waistEase').value);
+           const totalWaistReduction = Math.max(0, totalBust - totalWaist);
 
+    const defaultDoubleBack = totalWaistReduction > 4.5;
+    const defaultDoubleFront = totalWaistReduction > 6.0;
+
+    const backToggleEl = document.getElementById('doubleBackToggle');
+    const frontToggleEl = document.getElementById('doubleFrontToggle');
+
+    const useDoubleBackDarts = backToggleEl ? backToggleEl.checked : defaultDoubleBack;
+    const useDoubleFrontDarts = frontToggleEl ? frontToggleEl.checked : defaultDoubleFront;
             const bWidth = (((hipVal + hipEaseVal) / 2) + 4.0) * scaleFactor;
             const bHeight = (backLengthVal + waistToHipVal + 5.0) * scaleFactor;
             const canvasBWidth = Math.max(900, bWidth + 150);
