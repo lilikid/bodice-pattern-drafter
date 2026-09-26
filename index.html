@@ -1091,6 +1091,7 @@
     const baseBackX = backWidthVal / 4.0;
     const baseFrontX = chestWidthVal / 4.0;
 
+    // Use 'let' so they can be defined safely based on toggles
     let backDartXCoords = [];
     if (useDoubleBackDarts) {
         backDartXCoords = [baseBackX - 0.75, baseBackX + 0.75];
