@@ -442,7 +442,7 @@
                     </select>
                 </div>
 
-                <div class="garment-module">
+<div class="garment-module">
                     <div class="garment-module-header" onclick="toggleModule('bodiceBody')">
                         <h3>1. Bodice Window</h3>
                         <span style="font-size:0.75rem; font-weight:600; color:var(--primary);">Configure ▼</span>
@@ -456,6 +456,20 @@
                                 <option value="loose">Relaxed (+3.0" Bust, +2.5" Waist)</option>
                             </select>
                         </div>
+
+                        <!-- Dart Configuration Toggles -->
+                        <div class="input-section">
+                            <label>Dart Configuration Styles</label>
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                                <label style="font-weight: normal; font-size: 0.9em; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="doubleBackToggle" style="margin: 0;"> Use Double Back Darts
+                                </label>
+                                <label style="font-weight: normal; font-size: 0.9em; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="doubleFrontToggle" style="margin: 0;"> Use Double Front Darts
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="input-section">
                             <label>Bust & Ease</label>
                             <div class="dual-input">
