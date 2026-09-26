@@ -2318,37 +2318,70 @@ appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10
             startMouseX = e.clientX - panX;
             startMouseY = e.clientY - panY;
         });
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            panX = e.clientX - startMouseX;
-            panY = e.clientY - startMouseY;
-            updateTransform();
-        });
-        window.addEventListener('mouseup', () => { isDragging = false; });
+   window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        panX = e.clientX - startMouseX;
+        panY = e.clientY - startMouseY;
+        updateTransform();
+    });
+    
+    window.addEventListener('mouseup', () => { isDragging = false; });
 
-        viewport.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const rect = viewport.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            const zoomIntensity = 0.1;
-            const oldScale = currentScale;
-            
-            if (e.deltaY < 0) currentScale = Math.min(3.0, currentScale + zoomIntensity);
-            else currentScale = Math.max(0.3, currentScale - zoomIntensity);
+    viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = viewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const zoomIntensity = 0.1;
+        const oldScale = currentScale;
+        
+        if (e.deltaY < 0) currentScale = Math.min(3.0, currentScale + zoomIntensity);
+        else currentScale = Math.max(0.3, currentScale - zoomIntensity);
 
-            panX = mouseX - (mouseX - panX) * (currentScale / oldScale);
-            panY = mouseY - (mouseY - panY) * (currentScale / oldScale);
-            updateTransform();
-        }, { passive: false });
+        panX = mouseX - (mouseX - panX) * (currentScale / oldScale);
+        panY = mouseY - (mouseY - panY) * (currentScale / oldScale);
+        updateTransform();
+    }, { passive: false });
 
-        window.onload = () => {
-            generatePattern();
-            updateTransform();
-            document.getElementById('sleevePanelBox').style.display = 'none';
-            document.getElementById('skirtPanelBox').style.display = 'none';
-            document.getElementById('pantPanelBox').style.display = 'none';
-        };
-    </script>
+    // 1. Global variables and helper functions declared at the top level
+    let isSideBySide = false;
+    let activeTabId = 'bodicePanelBox';
+
+    window.updateDartConfig = function() {
+        const frontChecked = document.getElementById('doubleDartFront').checked;
+        const backChecked = document.getElementById('doubleDartBack').checked;
+        
+        const frontConfig = document.getElementById('frontDartConfig');
+        const backConfig = document.getElementById('backDartConfig');
+        
+        if (frontConfig) {
+            frontConfig.style.display = frontChecked ? 'block' : 'none';
+        }
+        if (backConfig) {
+            backConfig.style.display = backChecked ? 'block' : 'none';
+        }
+    };
+
+    function initGrids(svgId, width, height) {
+        const svgElement = document.getElementById(svgId);
+        if (svgElement) {
+            svgElement.setAttribute('width', width);
+            svgElement.setAttribute('height', height);
+        }
+    }
+
+    // 2. Single window.onload execution block at the very bottom of the script
+    window.onload = () => {
+        generatePattern();
+        updateTransform();
+        
+        document.getElementById('sleevePanelBox').style.display = 'none';
+        document.getElementById('skirtPanelBox').style.display = 'none';
+        document.getElementById('pantPanelBox').style.display = 'none';
+
+        // Automatically check states on load
+        updateDartConfig();
+    };
+</script>
 </body>
 </html>
