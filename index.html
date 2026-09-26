@@ -456,6 +456,23 @@
                             </select>
                         </div>
                         <div class="input-section">
+    <label for="dartType">Bodice Dart Style</label>
+    <select id="dartType" onchange="toggleDartConfig()">
+        <option value="single" selected>Single Dart (Waist)</option>
+        <option value="double">Double Dart (Waist & Bust/Shoulder)</option>
+    </select>
+</div>
+
+<div id="doubleDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
+    <div class="input-section">
+        <label>Secondary Dart Intake & Length</label>
+        <div class="dual-input">
+            <input type="number" id="secondaryDartIntake" value="1.5" step="0.25" title="Intake in inches">
+            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="secondaryDartLength" value="5.5" step="0.25"></div>
+        </div>
+    </div>
+</div>
+                        <div class="input-section">
                             <label>Bust & Ease</label>
                             <div class="dual-input">
                                 <input type="number" id="bust" value="34.5" step="0.25">
