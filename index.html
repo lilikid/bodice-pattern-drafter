@@ -806,6 +806,16 @@
         let isSideBySide = false;
         let activeTabId = 'bodicePanelBox';
 
+window.updateDartConfig = function() {
+            const frontChecked = document.getElementById('doubleDartFront').checked;
+            const backChecked = document.getElementById('doubleDartBack').checked;
+            const extraConfig = document.getElementById('doubleDartExtraConfig');
+            
+            if (extraConfig) {
+                extraConfig.style.display = (frontChecked || backChecked) ? 'block' : 'none';
+            }
+        };
+        
         function initGrids(svgId, width, height) {
             const svgElement = document.getElementById(svgId);
             svgElement.setAttribute('width', width);
