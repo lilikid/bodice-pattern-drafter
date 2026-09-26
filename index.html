@@ -1059,6 +1059,41 @@
             const backLengthVal = parseFloat(document.getElementById('backNeckToWaist').value);
             const waistToHipVal = parseFloat(document.getElementById('waistToHip').value);
 
+
+            // --- STEP 1 & 2: SINGLE VS. DOUBLE DARTS CONFIGURATION ---
+    const totalWaistReduction = Math.max(0, totalBust - totalWaist);
+
+    const defaultDoubleBack = totalWaistReduction > 4.5;
+    const defaultDoubleFront = totalWaistReduction > 6.0;
+
+    const backToggleEl = document.getElementById('doubleBackToggle');
+    const frontToggleEl = document.getElementById('doubleFrontToggle');
+
+    const useDoubleBackDarts = backToggleEl ? backToggleEl.checked : defaultDoubleBack;
+    const useDoubleFrontDarts = frontToggleEl ? frontToggleEl.checked : defaultDoubleFront;
+    // --------------------------------------------------------
+
+    // --- STEP 2: DART HORIZONTAL LOCATIONS (Single & Double Support) ---
+    const chestWidthVal = parseFloat(document.getElementById('chestWidth')?.value) || 13.0;
+    const backWidthVal = parseFloat(document.getElementById('backWidth')?.value) || 14.0;
+
+    const baseBackX = backWidthVal / 4.0;
+    const baseFrontX = chestWidthVal / 4.0;
+
+    let backDartXCoords = [];
+    if (useDoubleBackDarts) {
+        backDartXCoords = [baseBackX - 0.75, baseBackX + 0.75];
+    } else {
+        backDartXCoords = [baseBackX];
+    }
+
+    let frontDartXCoords = [];
+    if (useDoubleFrontDarts) {
+        frontDartXCoords = [baseFrontX - 0.8, baseFrontX + 0.8];
+    } else {
+        frontDartXCoords = [baseFrontX];
+    }
+    // --------------------------------------------------------
             const bWidth = (((hipVal + hipEaseVal) / 2) + 4.0) * scaleFactor;
             const bHeight = (backLengthVal + waistToHipVal + 5.0) * scaleFactor;
             const canvasBWidth = Math.max(900, bWidth + 150);
