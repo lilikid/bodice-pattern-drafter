@@ -458,23 +458,45 @@
 <div class="dart-options-group">
     <div style="font-weight: bold; margin-bottom: 8px;">Dart Options</div>
     
+    <!-- Front Option -->
     <label style="display: block; margin-bottom: 6px;">
         <input type="checkbox" id="doubleDartFront" onchange="updateDartConfig()"> 
         Double front waist darts
     </label>
     
-    <label style="display: block;">
+    <!-- Front Extra Config Panel -->
+    <div id="frontDartConfig" style="display: none; margin-left: 20px; margin-bottom: 12px; padding: 8px; border-left: 2px solid #a00; background: rgba(0,0,0,0.02);">
+        <div style="font-size: 0.9em; font-weight: bold; margin-bottom: 4px;">Front Secondary Dart</div>
+        <div style="display: flex; gap: 10px;">
+            <div>
+                <label style="font-size: 0.8em; display: block;">Intake</label>
+                <input type="number" id="frontDartIntake" value="1.5" style="width: 70px; padding: 4px;">
+            </div>
+            <div>
+                <label style="font-size: 0.8em; display: block;">Length</label>
+                <input type="number" id="frontDartLength" value="5.5" style="width: 70px; padding: 4px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Option -->
+    <label style="display: block; margin-bottom: 6px;">
         <input type="checkbox" id="doubleDartBack" onchange="updateDartConfig()"> 
         Double back waist darts
     </label>
-</div>
-
-<div id="doubleDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
-    <div class="input-section">
-        <label>Secondary Dart Intake & Length</label>
-        <div class="dual-input">
-            <input type="number" id="secondaryDartIntake" value="1.5" step="0.25" title="Intake in inches">
-            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="secondaryDartLength" value="5.5" step="0.25"></div>
+    
+    <!-- Back Extra Config Panel -->
+    <div id="backDartConfig" style="display: none; margin-left: 20px; padding: 8px; border-left: 2px solid #00a; background: rgba(0,0,0,0.02);">
+        <div style="font-size: 0.9em; font-weight: bold; margin-bottom: 4px;">Back Secondary Dart</div>
+        <div style="display: flex; gap: 10px;">
+            <div>
+                <label style="font-size: 0.8em; display: block;">Intake</label>
+                <input type="number" id="backDartIntake" value="1.25" style="width: 70px; padding: 4px;">
+            </div>
+            <div>
+                <label style="font-size: 0.8em; display: block;">Length</label>
+                <input type="number" id="backDartLength" value="5.0" style="width: 70px; padding: 4px;">
+            </div>
         </div>
     </div>
 </div>
