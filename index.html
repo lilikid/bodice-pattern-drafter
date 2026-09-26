@@ -1694,7 +1694,7 @@
 
             // --- STEP 16: Bust Dart Position ---
             // Measure out from the center Front Point CF a quarter chest width and move this distance to the right
-            const chestWidthVal = parseFloat(document.getElementById('chestWidth').value) || 13.0;
+            chestWidthVal = parseFloat(document.getElementById('chestWidth').value) || 13.0;
             const quarterChestWidthInches = chestWidthVal / 4.0;
             const quarterChestWidthPixels = quarterChestWidthInches * scaleFactor;
             const bustDartGuideLineX = cfAnchorX - quarterChestWidthPixels;
