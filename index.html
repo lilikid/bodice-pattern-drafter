@@ -840,18 +840,28 @@ window.updateDartConfig = function() {
             }
         };
         
-        function initGrids(svgId, width, height) {
+function initGrids(svgId, width, height) {
             const svgElement = document.getElementById(svgId);
+            if (!svgElement) return;
+
             svgElement.setAttribute('width', width);
             svgElement.setAttribute('height', height);
             svgElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
             
-            const gridGroup = svgElement.querySelector('.grid-group-sub');
-            gridGroup.innerHTML = '';
+            // Safely find or create the grid group container
+            let gridGroup = svgElement.querySelector('.grid-group-sub');
+            if (!gridGroup) {
+                gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                gridGroup.setAttribute('class', 'grid-group-sub');
+                svgElement.insertBefore(gridGroup, svgElement.firstChild);
+            } else {
+                gridGroup.innerHTML = '';
+            }
             
             const baseStep = currentUnit === 'in' ? scaleFactor : scaleFactor / 2.54;
             const subStep = baseStep / 2;
 
+            // Render vertical grid lines
             for (let x = 0; x <= width; x += subStep) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', x); line.setAttribute('y1', 0);
@@ -868,6 +878,7 @@ window.updateDartConfig = function() {
                 gridGroup.appendChild(line);
             }
 
+            // Render horizontal grid lines
             for (let y = 0; y <= height; y += subStep) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', 0); line.setAttribute('y1', y);
