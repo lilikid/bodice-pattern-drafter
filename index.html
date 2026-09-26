@@ -1069,6 +1069,21 @@
             const frontLengthEaseVal = parseFloat(document.getElementById('frontNeckToWaistEase').value) || 0;
             const totalFrontLength = frontLengthVal + frontLengthEaseVal;
             const waistToHipVal = parseFloat(document.getElementById('waistToHip').value);
+            // Also get total waist for our suppression calculation
+    const totalWaist = parseFloat(document.getElementById('waist').value) + parseFloat(document.getElementById('waistEase').value);
+
+    // --- STEP 1 & 2: SINGLE VS. DOUBLE DARTS CONFIGURATION ---
+    const totalWaistReduction = Math.max(0, totalBust - totalWaist);
+
+    const defaultDoubleBack = totalWaistReduction > 4.5;
+    const defaultDoubleFront = totalWaistReduction > 6.0;
+
+    const backToggleEl = document.getElementById('doubleBackToggle');
+    const frontToggleEl = document.getElementById('doubleFrontToggle');
+
+    const useDoubleBackDarts = backToggleEl ? backToggleEl.checked : defaultDoubleBack;
+    const useDoubleFrontDarts = frontToggleEl ? frontToggleEl.checked : defaultDoubleFront;
+    // --------------------------------------------------------
 
             const bWidth = (((hipVal + hipEaseVal) / 2) + 4.0) * scaleFactor;
             const bHeight = (backLengthVal + waistToHipVal + 5.0) * scaleFactor;
