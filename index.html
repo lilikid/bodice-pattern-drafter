@@ -393,6 +393,28 @@
         .pattern-label:hover {
             opacity: 0.6;
         }
+        /* Allows the viewport to scroll both vertically and horizontally */
+.pattern-workspace-view {
+    overflow: auto;
+    position: relative;
+    width: 100%;
+    height: 750px; /* Or whatever fixed height your screen layout uses */
+    background: #f4f2f0; /* Optional: gives a nice contrast background around the white canvas */
+}
+
+/* Ensures the canvas wrapper matches or exceeds the SVG size dynamically */
+.pattern-canvas-wrapper {
+    position: relative;
+    display: inline-block;
+    min-width: 100%;
+    min-height: 100%;
+}
+
+/* Ensures the SVG itself scales cleanly and respects dynamic JS dimensions */
+#svg-bodice {
+    display: block;
+    background: #ffffff;
+}
     </style>
 </head>
 <body>
@@ -778,12 +800,14 @@
                     
                     <div class="svg-panel-box" id="bodicePanelBox">
                         <h4 id="bodiceTitle">Bodice Block</h4>
-                        <svg id="svg-bodice" width="800" height="750" viewBox="0 0 800 750" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="100%" height="100%" fill="#ffffff" />
-                            <g class="grid-group-sub"></g>
-                            <g class="pattern-group-sub"></g>
-                        </svg>
-                    </div>
+                        <svg id="svg-bodice" viewBox="0 0 800 750" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" fill="#ffffff" />
+                <g class="grid-group-sub"></g>
+                <g class="pattern-group-sub"></g>
+            </svg>
+        </div>
+    </div>
+</div>
 
                     <div class="svg-panel-box" id="sleevePanelBox">
                         <h4 id="sleeveTitle">Fitted Sleeve</h4>
@@ -1120,8 +1144,12 @@ function initGrids(svgId, width, height) {
             const canvasBHeight = Math.max(850, bHeight + 150);
             
             initGrids('svg-bodice', canvasBWidth, canvasBHeight);
+            document.getElementById('svg-canvas-wrapper').style.width = `${canvasBWidth}px`;
+            document.getElementById('svg-canvas-wrapper').style.height = `${canvasBHeight}px`;
             document.getElementById('bodiceTitle').textContent = `Bodice Block (Bust: ${totalBust}" | Hip: ${hipVal + hipEaseVal}")`;
+            
 
+            
             // STEP 1: Place Point CB & Point CF Anchor Points at Top Corners
             const pointCB = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             pointCB.setAttribute('cx', 50); pointCB.setAttribute('cy', 50); pointCB.setAttribute('r', 4.5);
