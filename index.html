@@ -329,26 +329,32 @@
 
         .zoom-btn:hover { background: #f0ebe8; }
 
+        /* Workspace View - Allows smooth scrolling */
         .pattern-workspace-view {
             width: 100%;
+            height: 750px;
             flex-grow: 1;
-           overflow: auto;
+            overflow: auto;
             position: relative;
-            background: #ffffff;
+            background: #f4f2f0;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             cursor: grab;
         }
 
-        .pattern-workspace-view:active { cursor: grabbing; }
+        .pattern-workspace-view:active { 
+            cursor: grabbing; 
+        }
 
+        /* Canvas Wrapper - Expands dynamically to match canvas dimensions */
         .pattern-canvas-wrapper {
             position: relative;
+            display: inline-block;
+            min-width: 100%;
+            min-height: 100%;
+            padding: 20px;
             transform-origin: 0 0;
             will-change: transform;
-            display: flex;
-            gap: 40px;
-            padding: 20px;
         }
 
         .pattern-canvas-wrapper.grid-layout {
@@ -357,6 +363,7 @@
             gap: 30px;
         }
 
+        /* Outer White Panel Box */
         .svg-panel-box {
             background: #ffffff;
             border: 1px solid var(--border-color);
@@ -365,6 +372,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.02);
             display: inline-block;
             width: auto;
+            height: auto;
         }
 
         .svg-panel-box h4 {
@@ -376,16 +384,17 @@
             padding-bottom: 4px;
         }
 
-        svg {
+        /* SVG Element */
+        #svg-bodice {
             background: #ffffff;
             display: block;
         }
 
+        /* Grid and Label Styles */
         .grid-line-sub { stroke: #f0ecea; stroke-width: 0.5; vector-effect: non-scaling-stroke; }
         .grid-line-half { stroke: #d5ccc8; stroke-width: 0.8; vector-effect: non-scaling-stroke; }
         .grid-line-major { stroke: #b8aba5; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 
-        /* Interactive label style */
         .pattern-label {
             cursor: pointer;
             user-select: none;
@@ -395,28 +404,6 @@
         .pattern-label:hover {
             opacity: 0.6;
         }
-        /* Allows the viewport to scroll both vertically and horizontally */
-.pattern-workspace-view {
-    overflow: auto;
-    position: relative;
-    width: 100%;
-    height: 750px; /* Or whatever fixed height your screen layout uses */
-    background: #f4f2f0; /* Optional: gives a nice contrast background around the white canvas */
-}
-
-/* Ensures the canvas wrapper matches or exceeds the SVG size dynamically */
-.pattern-canvas-wrapper {
-    position: relative;
-    display: inline-block;
-    min-width: 100%;
-    min-height: 100%;
-}
-
-/* Ensures the SVG itself scales cleanly and respects dynamic JS dimensions */
-#svg-bodice {
-    display: block;
-    background: #ffffff;
-}
     </style>
 </head>
 <body>
