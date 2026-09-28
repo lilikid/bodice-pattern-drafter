@@ -1133,12 +1133,12 @@ function initGrids(svgId, width, height) {
             const canvasBHeight = Math.max(850, bHeight + 150);
             
             initGrids('svg-bodice', canvasBWidth, canvasBHeight);
+           // Only set width dynamically; let height expand naturally based on content & grid layout
             document.getElementById('svg-canvas-wrapper').style.width = `${canvasBWidth}px`;
-            document.getElementById('svg-canvas-wrapper').style.height = `${canvasBHeight}px`;
+            document.getElementById('svg-canvas-wrapper').style.height = '';
+            // Clear rigid height lock
             document.getElementById('bodiceTitle').textContent = `Bodice Block (Bust: ${totalBust}" | Hip: ${hipVal + hipEaseVal}")`;
-            
-
-            
+          
             // STEP 1: Place Point CB & Point CF Anchor Points at Top Corners
             const pointCB = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             pointCB.setAttribute('cx', 50); pointCB.setAttribute('cy', 50); pointCB.setAttribute('r', 4.5);
