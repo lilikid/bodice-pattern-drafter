@@ -2267,44 +2267,44 @@ bodiceGroup.appendChild(verticalLineFromPointX);
 // Label positioned near the waist line intersection
 appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
 
-// --- STEP 31: Waist darts using Lower Waist Line (sloped) + Hip Line (bottom of bodice box) ---
-// Paste immediately after STEP 30
+// --- STEP 31 (FIXED): should draw darts. Paste after Step 30 ---
 
-// Hip line = bottom of bodice rectangle
+// IMPORTANT: ensure you have the same group that your other darts use.
+// If you don't have groupForDarts, change it to `group` (whatever is correct in your code).
+const groupForDarts = groupForDarts ?? group; // <-- adjust if needed
+
+// Hip line = bottom of rectangle
 const H_X1 = 50;
 const H_X2 = 50 + bWidth;
 const H_Y1 = 50 + bHeight;
 const H_Y2 = 50 + bHeight;
 
-// Helper: y on a line segment between endpoints
+// Helper: y on a line segment (linear interpolation/extrapolation)
 function yOnSegment(x, x1, y1, x2, y2) {
   if (Math.abs(x2 - x1) < 1e-9) return y1;
   return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
 }
 
-// Termination inches (same approach as your earlier dart logic)
+// Lower Waist Line endpoints (from Step 29)
+const LW_X1 = cbWaistIntersectionX;
+const LW_Y1 = cbWaistIntersectionY;
+const LW_X2 = pointLW_X;
+const LW_Y2 = pointLW_Y;
+
+// Start darts from LOWER WAIST LINE (sloped)
+function lwBaseY_atX(dartX) {
+  return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
+}
+
+// Apex / termination references
+const apexY = (typeof pointXY !== 'undefined') ? pointXY : bustLineY;
+
 const FRONT_TOP_STOP_IN = 1.0;
 const FRONT_BOTTOM_STOP_IN = 1.75;
 const BACK_TOP_STOP_IN = 1.75;
 const BACK_BOTTOM_STOP_IN = 1.75;
 
-// Apex reference (use your existing variable)
-const apexY = (typeof pointXY !== 'undefined' ? pointXY : bustLineY);
-
-// Length conversion helpers
-function lengthInchesFromYs(baseY, tipY) {
-  const lenPx = baseY - tipY;
-  return Math.max(0.1, lenPx / scaleFactor);
-}
-function professionalLengthFromInches(Lin) {
-  const professionalDropIn = num('dartApexDropInches', 2);
-  const professionalDropPx = professionalDropIn * scaleFactor;
-  const Lpx = Lin * scaleFactor;
-  const newLpx = Math.max(0.1, Lpx - professionalDropPx);
-  return newLpx / scaleFactor;
-}
-
-// Compute dart base/tip y’s using the Hip line for termination
+// Termination at hip/bottom rectangle
 function frontBottomY_atX(dartX) {
   const hipY = yOnSegment(dartX, H_X1, H_Y1, H_X2, H_Y2);
   return hipY - (FRONT_BOTTOM_STOP_IN * scaleFactor);
@@ -2321,19 +2321,7 @@ function backTopY_atX(dartX) {
   return bustLineY + (BACK_TOP_STOP_IN * scaleFactor);
 }
 
-// Lower Waist Line endpoints from your Step 29
-const LW_X1 = cbWaistIntersectionX;
-const LW_Y1 = cbWaistIntersectionY;
-const LW_X2 = pointLW_X;
-const LW_Y2 = pointLW_Y;
-
-// IMPORTANT: Your darts should start from the LOWER WAIST LINE (sloped),
-// so we use yOnSegment for the base point on LW.
-function lwBaseY_atX(dartX) {
-  return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
-}
-
-// Dart x positions / widths
+// Width/x positions and options
 const frontDouble = document.getElementById('doubleDartFront')?.checked;
 const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
@@ -2356,22 +2344,48 @@ function widthToHalfPx(wTotal) {
   return (wTotal / 2) * scaleFactor;
 }
 
-// Assumes you already have drawDart(...) defined in your code.
-// drawDart(groupForDarts, baseX, baseY, halfWidthPx, lenProPx, strokeColor, labelColor)
+function lengthInchesFromYs(baseY, tipY) {
+  const lenPx = baseY - tipY;
+  return Math.max(0.1, lenPx / scaleFactor);
+}
+function professionalLengthFromInches(Lin) {
+  const professionalDropIn = num('dartApexDropInches', 2);
+  const professionalDropPx = professionalDropIn * scaleFactor;
+  const Lpx = Lin * scaleFactor;
+  const newLpx = Math.max(0.1, Lpx - professionalDropPx);
+  return newLpx / scaleFactor;
+}
+
+// Draw using LW as base
 function drawFrontDart(baseX, halfWidthPx, labelColor) {
-  const baseY = lwBaseY_atX(baseX);        // start at LOWER WAIST LINE
-  const tipY  = frontTopY_atX(baseX);     // tip termination toward hip/bust logic
+  const baseY = lwBaseY_atX(baseX);
+  const tipY  = frontTopY_atX(baseX);
+
+  if (!Number.isFinite(baseY) || !Number.isFinite(tipY)) {
+    console.warn('Front dart coords invalid:', { baseX, baseY, tipY });
+    return;
+  }
+
   const lenIn = lengthInchesFromYs(baseY, tipY);
   const lenInPro = professionalLengthFromInches(lenIn);
-  return drawDart(group, baseX, baseY, halfWidthPx, lenInPro, '#e11d48', labelColor);
+
+  // drawDart signature must match your existing drawDart(...)
+  return drawDart(groupForDarts, baseX, baseY, halfWidthPx, lenInPro, '#e11d48', labelColor);
 }
 
 function drawBackDart(baseX, halfWidthPx, labelColor) {
-  const baseY = lwBaseY_atX(baseX);        // start at LOWER WAIST LINE
+  const baseY = lwBaseY_atX(baseX);
   const tipY  = backTopY_atX(baseX);
+
+  if (!Number.isFinite(baseY) || !Number.isFinite(tipY)) {
+    console.warn('Back dart coords invalid:', { baseX, baseY, tipY });
+    return;
+  }
+
   const lenIn = lengthInchesFromYs(baseY, tipY);
   const lenInPro = professionalLengthFromInches(lenIn);
-  return drawDart(group, baseX, baseY, halfWidthPx, lenInPro, '#9333ea', labelColor);
+
+  return drawDart(groupForDarts, baseX, baseY, halfWidthPx, lenInPro, '#9333ea', labelColor);
 }
 
 // FRONT
@@ -2401,6 +2415,7 @@ if (backDouble) {
 } else {
   drawBackDart(backBaseReferenceX, widthToHalfPx(biW), 'Back Waist Dart (Single)');
 }
+
         
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
