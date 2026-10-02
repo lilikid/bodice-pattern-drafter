@@ -1516,7 +1516,8 @@
 
 
             // --- STEP 12: Measure from the left side along the Hip Line ¼ of the Hip measurement and label this point Back Hip Point y ---
-            const hipLineY = 50 + bHeight;
+            const hipLineY = 50 + (backLengthVal + waistToHipVal) * scaleFactor;
+
             const quarterHipInches = hipVal / 4.0;
             const quarterHipPixels = quarterHipInches * scaleFactor;
             const backHipPointX = 50 + quarterHipPixels;
