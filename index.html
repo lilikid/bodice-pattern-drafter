@@ -1681,8 +1681,22 @@
             bodiceRect.setAttribute('stroke', '#c25e6f'); bodiceRect.setAttribute('stroke-width', '2'); bodiceRect.setAttribute('stroke-dasharray', '4');
             bodiceGroup.appendChild(bodiceRect);
 
-            // Add Hip Line Label to the lower line of the bodice block box
-            appendLabel(bodiceGroup, 'Hip Line', 60, 50 + bHeight, '#c25e6f', '11', 'bold', false);
+            // Hip line position (horizontal)
+const hipLineY = 50 + (backLengthVal + waistToHipVal) * scaleFactor;
+
+// Hip line (horizontal)
+const hipLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+hipLine.setAttribute("x1", "0");
+hipLine.setAttribute("x2", String(svgWidth)); // make sure svgWidth is your SVG width
+hipLine.setAttribute("y1", String(hipLineY));
+hipLine.setAttribute("y2", String(hipLineY));
+
+// normal blue line + normal thickness
+hipLine.setAttribute("stroke", "#1E6BFF");
+hipLine.setAttribute("stroke-width", "2");
+hipLine.setAttribute("stroke-linecap", "round");
+
+svg.appendChild(hipLine);
 
 
             // --- CENTER FRONT & CENTER BACK VERTICAL NAMES (INSIDE) ---
