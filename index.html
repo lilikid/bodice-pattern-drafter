@@ -2431,75 +2431,99 @@ function drawSideSeamCurve(group) {
 
   appendLabel(group, 'Side Seam Curve (front & back)', (fTopX + bTopX) / 2 + 10, waistLineY + 10, seamStroke, '10', '600', false);
 }
+            
+function yOnLine(x, x1, y1, x2, y2) {
+  if (Math.abs(x2 - x1) < 1e-9) return y1;
+  return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+}
 
 // Draw darts
 function drawWaistDarts(group) {
   const frontDouble = document.getElementById('doubleDartFront')?.checked;
-  const backDouble = document.getElementById('doubleDartBack')?.checked;
+  const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
-  // Waist base y is waistLineY (already defined in STEP 26)
-  const baseY = waistLineY;
+  // Lower waist line (LW) endpoints:
+  const lwX1 = 50;
+  const lwY1 = waistLineY;   // CB waist
+  const lwX2 = cfAnchorX;
+  const lwY2 = pointLW_Y;    // LW at CF
+
+  function baseYAt(x) {
+    return yOnLine(x, lwX1, lwY1, lwX2, lwY2);
+  }
 
   // Choose dart base x locations:
-  // Front: between CF and side seam. Use chest dart guide line as a stable reference.
-  // In your code, bust dart guide X is: bustDartGuideLineX (exists in STEP 16).
-  // Back: between CB and side seam. Use backWidthPointX as a stable reference.
   const frontBaseReferenceX = bustDartGuideLineX || (cfAnchorX - 4 * scaleFactor);
-  const backBaseReferenceX = backWidthPointX || (50 + 4 * scaleFactor);
+  const backBaseReferenceX  = backWidthPointX || (50 + 4 * scaleFactor);
 
-  // Split positions: inner dart closer to CF, outer dart closer to side seam.
-  // We place them symmetrically around the reference X.
-  // Adjust “spacing” so darts don’t overlap: 0.35 inch default separation in pixels.
+  // Separation between double darts (pixels)
   const separationPx = 0.35 * scaleFactor;
 
-  // FRONT dart width/length
+  // UI widths/lengths
   const fiW = num('frontInnerWidth', 0.75);
   const foW = num('frontOuterWidth', 0.75);
   const fiL = num('frontInnerLength', calcDartLengthFromGeometry());
   const foL = num('frontOuterLength', calcDartLengthFromGeometry());
 
-  // BACK dart width/length
   const biW = num('backInnerWidth', 0.5);
   const boW = num('backOuterWidth', 0.5);
   const biL = num('backInnerLength', calcDartLengthFromGeometry());
   const boL = num('backOuterLength', calcDartLengthFromGeometry());
 
-  // Convert dart width to halfWidth for left/right legs:
-  // We interpret UI "width" as the full dart intake across the two legs at waist.
-  // So halfWidth = (width/2) pixels.
+  // Convert dart intake width to half-width per leg at waist
   function widthToHalfPx(w) {
     return (w / 2) * scaleFactor;
   }
 
+  // --- Professional adjustment: start below apex by a few inches ---
+  // If your drawDart uses length from base down to the apex, then:
+  // "start below apex" => apex is effectively LOWER => reduce length.
+  const professionalDropIn = num('dartApexDropInches', 2); // choose "few inches" (default 2)
+  const professionalDropPx = professionalDropIn * scaleFactor;
+
+  function professionalLength(L) {
+    // ensure we never go negative
+    return Math.max(0.1, L - professionalDropPx);
+  }
+
+  const fiL_pro = professionalLength(fiL);
+  const foL_pro = professionalLength(foL);
+  const biL_pro = professionalLength(biL);
+  const boL_pro = professionalLength(boL);
+
   // FRONT:
   if (frontDouble) {
     // inner
+    const baseXInner = frontBaseReferenceX - separationPx;
     drawDart(group,
-      frontBaseReferenceX - separationPx,
-      baseY,
+      baseXInner,
+      baseYAt(baseXInner),          // FIX: use baseXInner (not x)
       widthToHalfPx(fiW),
-      fiL,
+      fiL_pro,                       // professional apex drop
       '#e11d48',
       'Front Waist Double Dart (Inner)'
     );
+
     // outer
     if (foW > 0) {
+      const baseXOuter = frontBaseReferenceX + separationPx;
       drawDart(group,
-        frontBaseReferenceX + separationPx,
-        baseY,
+        baseXOuter,
+        baseYAt(baseXOuter),        // FIX
         widthToHalfPx(foW),
-        foL,
+        foL_pro,                     // professional apex drop
         '#e11d48',
         'Front Waist Double Dart (Outer)'
       );
     }
   } else {
-    // single: draw inner only
+    // single
+    const baseX = frontBaseReferenceX;
     drawDart(group,
-      frontBaseReferenceX,
-      baseY,
+      baseX,
+      baseYAt(baseX),                // FIX
       widthToHalfPx(fiW),
-      fiL,
+      fiL_pro,                       // professional apex drop
       '#e11d48',
       'Front Waist Dart (Single)'
     );
@@ -2507,30 +2531,37 @@ function drawWaistDarts(group) {
 
   // BACK:
   if (backDouble) {
+    // inner
+    const baseXInner = backBaseReferenceX - separationPx;
     drawDart(group,
-      backBaseReferenceX - separationPx,
-      baseY,
+      baseXInner,
+      baseYAt(baseXInner),          // FIX
       widthToHalfPx(biW),
-      biL,
+      biL_pro,
       '#9333ea',
       'Back Waist Double Dart (Inner)'
     );
+
+    // outer
     if (boW > 0) {
+      const baseXOuter = backBaseReferenceX + separationPx;
       drawDart(group,
-        backBaseReferenceX + separationPx,
-        baseY,
+        baseXOuter,
+        baseYAt(baseXOuter),        // FIX
         widthToHalfPx(boW),
-        boL,
+        boL_pro,
         '#9333ea',
         'Back Waist Double Dart (Outer)'
       );
     }
   } else {
+    // single
+    const baseX = backBaseReferenceX;
     drawDart(group,
-      backBaseReferenceX,
-      baseY,
+      baseX,
+      baseYAt(baseX),                // FIX
       widthToHalfPx(biW),
-      biL,
+      biL_pro,
       '#9333ea',
       'Back Waist Dart (Single)'
     );
