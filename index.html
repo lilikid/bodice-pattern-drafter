@@ -446,36 +446,58 @@
                         <h3>1. Bodice Window</h3>
                         <span style="font-size:0.75rem; font-weight:600; color:var(--primary);">Configure ▼</span>
                     </div>
-                    <div id="bodiceBody" class="garment-module-body" style="display:none;">
-                        <div class="input-section">
-                            <label for="blockPreset">Fit & Ease Preset</label>
-                            <select id="blockPreset" onchange="applyPreset()">
-                                <option value="standard">Standard Woven (+2.0" Bust, +1.5" Waist)</option>
-                                <option value="fitted">Fitted (+1.0" Bust, +0.5" Waist)</option>
-                                <option value="loose">Relaxed (+3.0" Bust, +2.5" Waist)</option>
-                            </select>
-                        </div>
-<div class="input-section">
-    <label>Dart Options</label>
-    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
-        <label style="font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-            <input type="checkbox" id="doubleDartFront" onchange="updateDartConfig()"> Double Front Dart
-        </label>
-        <label style="font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-            <input type="checkbox" id="doubleDartBack" onchange="updateDartConfig()"> Double Back Dart
-        </label>
-    </div>
-</div>
 
-<div id="doubleDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
+<div id="bodiceBody" class="garment-module-body" style="display:none;">
     <div class="input-section">
-        <label>Secondary Dart Intake & Length</label>
-        <div class="dual-input">
-            <input type="number" id="secondaryDartIntake" value="1.5" step="0.25" title="Intake in inches">
-            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="secondaryDartLength" value="5.5" step="0.25"></div>
+        <label for="blockPreset">Fit & Ease Preset</label>
+        <select id="blockPreset" onchange="applyPreset()">
+            <option value="standard">Standard Woven (+2.0" Bust, +1.5" Waist)</option>
+            <option value="fitted">Fitted (+1.0" Bust, +0.5" Waist)</option>
+            <option value="loose">Relaxed (+3.0" Bust, +2.5" Waist)</option>
+        </select>
+    </div>
+
+    <div class="input-section">
+        <label>Dart Options</label>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+            <label style="font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="doubleDartFront" onchange="updateDartConfig()"> Double Front Dart
+            </label>
+            <label style="font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="doubleDartBack" onchange="updateDartConfig()"> Double Back Dart
+            </label>
+        </div>
+    </div>
+
+    <div id="doubleDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
+        <div class="input-section">
+            <label>Secondary Dart Intake & Length</label>
+            <div class="dual-input">
+                <input type="number" id="secondaryDartIntake" value="1.5" step="0.25" title="Intake in inches">
+                <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="secondaryDartLength" value="5.5" step="0.25"></div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- 2. JavaScript Script Block -->
+<script>
+    function updateDartConfig() {
+        const frontChecked = document.getElementById('doubleDartFront').checked;
+        const backChecked = document.getElementById('doubleDartBack').checked;
+        const extraConfig = document.getElementById('doubleDartExtraConfig');
+        
+        // Show the extra config block if either checkbox is checked
+        if (frontChecked || backChecked) {
+            extraConfig.style.display = 'block';
+        } else {
+            extraConfig.style.display = 'none';
+        }
+        
+        // Uncomment below once your pattern drawing logic is ready for it
+        // generatePattern(); 
+    }
+</script>
                         <div class="input-section">
                             <label>Bust & Ease</label>
                             <div class="dual-input">
