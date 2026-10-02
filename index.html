@@ -2267,7 +2267,7 @@ bodiceGroup.appendChild(verticalLineFromPointX);
 // Label positioned near the waist line intersection
 appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
 
-// --- STEP 31: Draw waist darts (directly into bodiceGroup) ---
+// --- STEP 31: Draw waist darts with correct front/back top references ---
 
 // Hip line = bottom of the bodice rectangle
 const H_X1 = 50;
@@ -2281,33 +2281,26 @@ const LW_Y1 = cbWaistIntersectionY;
 const LW_X2 = pointLW_X;
 const LW_Y2 = pointLW_Y;
 
-// Helper: y at x on a segment (linear)
+// Helper: y at x on a segment
 function yOnSegment(x, x1, y1, x2, y2) {
   if (Math.abs(x2 - x1) < 1e-9) return y1;
   return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
 }
 
-// Dart baseY from LOWER WAIST LINE (sloped)
+// Base point for dart comes from the *sloped* lower waist line
 function lwBaseY_atX(dartX) {
   return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
 }
 
-// Convert “dart length (inches)” to tipY position in px
-function tipYFromLength(baseY, lengthInches) {
-  return baseY - (lengthInches * scaleFactor);
-}
-
-// Draw a dart as two lines from base edge to a tip
-function drawWaistDartLocal(baseX, baseY, halfWidthPx, tipY, color) {
+// Draw a dart as two lines from base edge points to a single apex
+function drawWaistDartLocal(baseX, baseY, halfWidthPx, apexY, color) {
   const leftX = baseX - halfWidthPx;
   const rightX = baseX + halfWidthPx;
-  const apexX = baseX;
-  const apexY = tipY;
 
   const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   leg1.setAttribute('x1', leftX);
   leg1.setAttribute('y1', baseY);
-  leg1.setAttribute('x2', apexX);
+  leg1.setAttribute('x2', baseX);
   leg1.setAttribute('y2', apexY);
   leg1.setAttribute('stroke', color);
   leg1.setAttribute('stroke-width', '1.5');
@@ -2316,101 +2309,116 @@ function drawWaistDartLocal(baseX, baseY, halfWidthPx, tipY, color) {
   const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   leg2.setAttribute('x1', rightX);
   leg2.setAttribute('y1', baseY);
-  leg2.setAttribute('x2', apexX);
+  leg2.setAttribute('x2', baseX);
   leg2.setAttribute('y2', apexY);
   leg2.setAttribute('stroke', color);
   leg2.setAttribute('stroke-width', '1.5');
   bodiceGroup.appendChild(leg2);
 }
 
-// Read inputs directly (no `num()` needed)
+// Read number safely
 function readNumber(id, fallback) {
   const el = document.getElementById(id);
   const v = el ? parseFloat(el.value) : NaN;
   return Number.isFinite(v) ? v : fallback;
 }
 
-const frontDouble = document.getElementById('doubleDartFront')?.checked;
-const backDouble  = document.getElementById('doubleDartBack')?.checked;
-
-const separationPx = 0.35 * scaleFactor;
-
-// Your dart “width” inputs are interpreted as total dart width (inches)
-function widthToHalfPx(totalWidthInches) {
-  return (totalWidthInches / 2) * scaleFactor;
+// Dart width inputs are treated as total dart width (inches)
+// Convert to half-width px
+function widthToHalfPx(widthInches) {
+  return (widthInches / 2) * scaleFactor;
 }
 
-// X references: reuse your existing guide variables if present
+// ----------------------
+// Reference lines for dart tops (your rule)
+// ----------------------
+
+// These variables exist earlier in your code:
+/// bustLineY, trueBustLineY
+
+const FRONT_DROP_INCHES = 1.0;   // front ends 1" below True Bust Line
+const BACK_DROP_INCHES  = 1.75;  // back ends ~1.5 to 2" below upper Bust Line
+
+const frontApexY = trueBustLineY + (FRONT_DROP_INCHES * scaleFactor);
+const backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
+
+// ----------------------
+// Dart x “centers” (where the dart tips point)
+// ----------------------
+
+// separation between inner/outer in double-dart mode
+const separationPx = 0.35 * scaleFactor;
+
+// Use your existing guides if they exist
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
   : (cfAnchorX - 4 * scaleFactor);
 
+// For back, you said: “from CB for the back Dart”
+// Your code already has backWidthPointX (measured from CB). Use it as dart center.
 const backBaseReferenceX = (typeof backWidthPointX !== 'undefined')
   ? backWidthPointX
   : (50 + 4 * scaleFactor);
 
-// FRONT dart settings
+// Width + (optional) length inputs for UI; width is used for opening.
+// We intentionally DO NOT use the length inputs to place the apex,
+// because the apex location is defined by the bust-line rule above.
 const frontInnerWidth  = readNumber('frontInnerWidth', 0.75);
-const frontInnerLength = readNumber('frontInnerLength', 5.5);
 const frontOuterWidth  = readNumber('frontOuterWidth', 0.75);
-const frontOuterLength = readNumber('frontOuterLength', 5.0);
+const backInnerWidth   = readNumber('backInnerWidth', 0.5);
+const backOuterWidth   = readNumber('backOuterWidth', 0.5);
 
-// BACK dart settings
-const backInnerWidth  = readNumber('backInnerWidth', 0.5);
-const backInnerLength = readNumber('backInnerLength', 5.0);
-const backOuterWidth  = readNumber('backOuterWidth', 0.5);
-const backOuterLength = readNumber('backOuterLength', 4.5);
+const frontDouble = document.getElementById('doubleDartFront')?.checked;
+const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
-// FRONT darts
+// ----------------------
+// Draw FRONT darts
+// ----------------------
 if (frontDouble) {
   // inner
-  {
+  if (frontInnerWidth > 0) {
     const baseX = frontBaseReferenceX - separationPx;
     const baseY = lwBaseY_atX(baseX);
     const halfW = widthToHalfPx(frontInnerWidth);
-    const tipY = tipYFromLength(baseY, frontInnerLength);
-    drawWaistDartLocal(baseX, baseY, halfW, tipY, '#e11d48');
+    drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
   }
   // outer
-  {
+  if (frontOuterWidth > 0) {
     const baseX = frontBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX);
     const halfW = widthToHalfPx(frontOuterWidth);
-    const tipY = tipYFromLength(baseY, frontOuterLength);
-    drawWaistDartLocal(baseX, baseY, halfW, tipY, '#e11d48');
+    drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
   }
 } else {
   const baseX = frontBaseReferenceX;
   const baseY = lwBaseY_atX(baseX);
   const halfW = widthToHalfPx(frontInnerWidth);
-  const tipY = tipYFromLength(baseY, frontInnerLength);
-  drawWaistDartLocal(baseX, baseY, halfW, tipY, '#e11d48');
+  drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
 }
 
-// BACK darts
+// ----------------------
+// Draw BACK darts
+// ----------------------
 if (backDouble) {
   // inner
-  {
+  if (backInnerWidth > 0) {
     const baseX = backBaseReferenceX - separationPx;
     const baseY = lwBaseY_atX(baseX);
     const halfW = widthToHalfPx(backInnerWidth);
-    const tipY = tipYFromLength(baseY, backInnerLength);
-    drawWaistDartLocal(baseX, baseY, halfW, tipY, '#9333ea');
+    drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
   }
   // outer
-  {
+  if (backOuterWidth > 0) {
     const baseX = backBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX);
     const halfW = widthToHalfPx(backOuterWidth);
-    const tipY = tipYFromLength(baseY, backOuterLength);
-    drawWaistDartLocal(baseX, baseY, halfW, tipY, '#9333ea');
+    drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
   }
 } else {
   const baseX = backBaseReferenceX;
   const baseY = lwBaseY_atX(baseX);
   const halfW = widthToHalfPx(backInnerWidth);
-  const tipY = tipYFromLength(baseY, backInnerLength);
-  drawWaistDartLocal(baseX, baseY, halfW, tipY, '#9333ea');
+  drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
 }
 
         
