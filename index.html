@@ -457,40 +457,72 @@
         </select>
     </div>
 
-    <div class="input-section">
-        <label>Dart Options</label>
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
-            <label style="font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="doubleDartFront" onchange="updateDartConfig()"> Double Front Dart
-            </label>
-            <label style="font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="doubleDartBack" onchange="updateDartConfig()"> Double Back Dart
-            </label>
-        </div>
+  <!-- Dart Options Checkboxes -->
+<div class="input-section">
+    <label>Dart Options</label>
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+        <label style="font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="doubleDartFront" onchange="updateDartConfig()"> Double Front Dart
+        </label>
+        <label style="font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="doubleDartBack" onchange="updateDartConfig()"> Double Back Dart
+        </label>
     </div>
+</div>
 
-<!-- 1. Front Secondary Dart Config Box -->
+<!-- Front Double Dart Config Box -->
 <div id="frontDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
-    <div class="input-section">
-        <label>Front Secondary Dart Intake & Length</label>
+    <div class="input-section" style="display: flex; justify-content: space-between; align-items: center;">
+        <label style="margin: 0; font-weight: 600;">Front Double Dart Specs</label>
+        <button type="button" onclick="resetFrontDarts()" style="font-size: 0.75rem; padding: 2px 6px; cursor: pointer;">Reset Default</button>
+    </div>
+    
+    <!-- Inner Front Dart -->
+    <div class="input-section" style="margin-top: 8px;">
+        <label style="font-size: 0.85rem;">Inner Front Dart (Width & Length)</label>
         <div class="dual-input">
-            <input type="number" id="frontSecondaryIntake" value="1.5" step="0.25" title="Front Intake in inches">
-            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="frontSecondaryLength" value="5.5" step="0.25"></div>
+            <input type="number" id="frontInnerWidth" value="0.75" step="0.125" title="Inner Width">
+            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="frontInnerLength" value="5.5" step="0.25"></div>
+        </div>
+    </div>
+
+    <!-- Outer Front Dart -->
+    <div class="input-section" style="margin-top: 8px;">
+        <label style="font-size: 0.85rem;">Outer Front Dart (Width & Length)</label>
+        <div class="dual-input">
+            <input type="number" id="frontOuterWidth" value="0.75" step="0.125" title="Outer Width">
+            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="frontOuterLength" value="5.0" step="0.25"></div>
         </div>
     </div>
 </div>
 
-<!-- 2. Back Secondary Dart Config Box -->
+<!-- Back Double Dart Config Box -->
 <div id="backDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
-    <div class="input-section">
-        <label>Back Secondary Dart Intake & Length</label>
+    <div class="input-section" style="display: flex; justify-content: space-between; align-items: center;">
+        <label style="margin: 0; font-weight: 600;">Back Double Dart Specs</label>
+        <button type="button" onclick="resetBackDarts()" style="font-size: 0.75rem; padding: 2px 6px; cursor: pointer;">Reset Default</button>
+    </div>
+    
+    <!-- Inner Back Dart -->
+    <div class="input-section" style="margin-top: 8px;">
+        <label style="font-size: 0.85rem;">Inner Back Dart (Width & Length)</label>
         <div class="dual-input">
-            <input type="number" id="backSecondaryIntake" value="1.0" step="0.25" title="Back Intake in inches">
-            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="backSecondaryLength" value="5.0" step="0.25"></div>
+            <input type="number" id="backInnerWidth" value="0.5" step="0.125" title="Inner Width">
+            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="backInnerLength" value="5.0" step="0.25"></div>
+        </div>
+    </div>
+
+    <!-- Outer Back Dart -->
+    <div class="input-section" style="margin-top: 8px;">
+        <label style="font-size: 0.85rem;">Outer Back Dart (Width & Length)</label>
+        <div class="dual-input">
+            <input type="number" id="backOuterWidth" value="0.5" step="0.125" title="Outer Width">
+            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="backOuterLength" value="4.5" step="0.25"></div>
         </div>
     </div>
 </div>
 
+    
 <!-- 3. JavaScript Script Block -->
 <script>
     function updateDartConfig() {
@@ -500,24 +532,63 @@
         const frontExtraConfig = document.getElementById('frontDartExtraConfig');
         const backExtraConfig = document.getElementById('backDartExtraConfig');
         
-        // Toggle Front extra configuration block independently
+        // Show/hide front container and auto-calculate defaults if opened
         if (frontChecked) {
             frontExtraConfig.style.display = 'block';
+            calculateDefaultFrontDarts();
         } else {
             frontExtraConfig.style.display = 'none';
         }
         
-        // Toggle Back extra configuration block independently
+        // Show/hide back container and auto-calculate defaults if opened
         if (backChecked) {
             backExtraConfig.style.display = 'block';
+            calculateDefaultBackDarts();
         } else {
             backExtraConfig.style.display = 'none';
         }
         
         // generatePattern(); // Uncomment when ready to redraw
     }
+
+    // Professional formula calculation based on waist/bust proportions
+    function calculateDefaultFrontDarts() {
+        const waist = parseFloat(document.getElementById('waist').value) || 26;
+        
+        // Standard proportional allocation for front double darts (e.g. 1.5" total intake split across two darts)
+        let totalFrontIntake = Math.max(1.0, (waist / 24) * 1.25); 
+        let halfIntake = +(totalFrontIntake / 2).toFixed(3);
+        
+        document.getElementById('frontInnerWidth').value = halfIntake;
+        document.getElementById('frontOuterWidth').value = halfIntake;
+        document.getElementById('frontInnerLength').value = 5.5;
+        document.getElementById('frontOuterLength').value = 5.0;
+    }
+
+    function calculateDefaultBackDarts() {
+        const waist = parseFloat(document.getElementById('waist').value) || 26;
+        
+        // Standard proportional allocation for back double darts
+        let totalBackIntake = Math.max(1.0, (waist / 24) * 1.0);
+        let halfIntake = +(totalBackIntake / 2).toFixed(3);
+        
+        document.getElementById('backInnerWidth').value = halfIntake;
+        document.getElementById('backOuterWidth').value = halfIntake;
+        document.getElementById('backInnerLength').value = 5.0;
+        document.getElementById('backOuterLength').value = 4.5;
+    }
+
+    // Reset buttons to re-trigger professional calculations
+    function resetFrontDarts() {
+        calculateDefaultFrontDarts();
+    }
+
+    function resetBackDarts() {
+        calculateDefaultBackDarts();
+    }
 </script>
 
+    
 <!-- 4. Bust & Ease Section -->
 
                         <div class="input-section">
