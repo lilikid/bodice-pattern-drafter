@@ -2267,7 +2267,7 @@ bodiceGroup.appendChild(verticalLineFromPointX);
 // Label positioned near the waist line intersection
 appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
 
-            // --- STEP 31: Waist darts using Lower Waist Line (sloped) + Hip Line (bottom of bodice box) ---
+// --- STEP 31: Waist darts using Lower Waist Line (sloped) + Hip Line (bottom of bodice box) ---
 // Paste immediately after STEP 30
 
 // Hip line = bottom of bodice rectangle
@@ -2401,8 +2401,7 @@ if (backDouble) {
 } else {
   drawBackDart(backBaseReferenceX, widthToHalfPx(biW), 'Back Waist Dart (Single)');
 }
-
-            
+        
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
