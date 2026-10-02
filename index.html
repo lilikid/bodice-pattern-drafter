@@ -2267,27 +2267,32 @@ bodiceGroup.appendChild(verticalLineFromPointX);
 // Label positioned near the waist line intersection
 appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
 
-// --- STEP 31: Draw waist darts with correct front/back top references ---
+// --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
+//
+// Assumes you already have (from STEP 29):
+// - waistLineY
+// - pointLW_X, pointLW_Y
+// - cfAnchorX
+//
+// And LW geometry:
+// - cbWaistIntersectionX, cbWaistIntersectionY
+// - lowerWaistLine endpoints used to form LW segment
 
-// Hip line = bottom of the bodice rectangle
-const H_X1 = 50;
-const H_X2 = 50 + bWidth;
-const H_Y1 = 50 + bHeight;
-const H_Y2 = 50 + bHeight;
-
-// Lower Waist Line endpoints from Step 29
+// ----------------------
+// Lower Waist Line endpoints (from STEP 29)
+// ----------------------
 const LW_X1 = cbWaistIntersectionX;
 const LW_Y1 = cbWaistIntersectionY;
 const LW_X2 = pointLW_X;
 const LW_Y2 = pointLW_Y;
 
-// Helper: y at x on a segment
+// Helper: y at x on the LW segment (so darts follow the sloped LW)
 function yOnSegment(x, x1, y1, x2, y2) {
   if (Math.abs(x2 - x1) < 1e-9) return y1;
   return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
 }
 
-// Base point for dart comes from the *sloped* lower waist line
+// Dart base point comes from the *sloped* Lower Waist Line
 function lwBaseY_atX(dartX) {
   return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
 }
@@ -2323,46 +2328,43 @@ function readNumber(id, fallback) {
   return Number.isFinite(v) ? v : fallback;
 }
 
-// Dart width inputs are treated as total dart width (inches)
-// Convert to half-width px
+// Convert total dart width (inches) -> half-width in px
 function widthToHalfPx(widthInches) {
   return (widthInches / 2) * scaleFactor;
 }
 
 // ----------------------
-// Reference lines for dart tops (your rule)
+// Reference lines for dart tops (apex y positions)
 // ----------------------
-
-// These variables exist earlier in your code:
-/// bustLineY, trueBustLineY
-
-const FRONT_DROP_INCHES = 1.0;   // front ends 1" below True Bust Line
-const BACK_DROP_INCHES  = 1.75;  // back ends ~1.5 to 2" below upper Bust Line
+// Assumes you already have: bustLineY, trueBustLineY
+const FRONT_DROP_INCHES = 1.0;
+const BACK_DROP_INCHES  = 1.75;
 
 const frontApexY = trueBustLineY + (FRONT_DROP_INCHES * scaleFactor);
 const backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
 
 // ----------------------
-// Dart x “centers” (where the dart tips point)
+// Dart x “centers” (base centers) + double-dart separation
 // ----------------------
-
-// separation between inner/outer in double-dart mode
 const separationPx = 0.35 * scaleFactor;
 
-// Use your existing guides if they exist
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
   : (cfAnchorX - 4 * scaleFactor);
 
-// For back, you said: “from CB for the back Dart”
-// Your code already has backWidthPointX (measured from CB). Use it as dart center.
-const backBaseReferenceX = (typeof backWidthPointX !== 'undefined')
-  ? backWidthPointX
-  : (50 + 4 * scaleFactor);
+// BACK: corrected rule = from CB + (backWidth / 4)
+// (CB x is 50 in your code)
+const cbAnchorX = 50;
 
-// Width + (optional) length inputs for UI; width is used for opening.
-// We intentionally DO NOT use the length inputs to place the apex,
-// because the apex location is defined by the bust-line rule above.
+const backWidthInchesTotal =
+  readNumber('backWidth', 14.0) + readNumber('backWidthEase', 0.0);
+
+// center for back dart “tips” reference
+const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
+
+// ----------------------
+// UI inputs (dart widths)
+// ----------------------
 const frontInnerWidth  = readNumber('frontInnerWidth', 0.75);
 const frontOuterWidth  = readNumber('frontOuterWidth', 0.75);
 const backInnerWidth   = readNumber('backInnerWidth', 0.5);
@@ -2372,51 +2374,51 @@ const frontDouble = document.getElementById('doubleDartFront')?.checked;
 const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
 // ----------------------
-// Draw FRONT darts
+// Draw FRONT darts (bases on LW)
 // ----------------------
 if (frontDouble) {
   // inner
   if (frontInnerWidth > 0) {
     const baseX = frontBaseReferenceX - separationPx;
-    const baseY = lwBaseY_atX(baseX);
+    const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(frontInnerWidth);
     drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
   }
   // outer
   if (frontOuterWidth > 0) {
     const baseX = frontBaseReferenceX + separationPx;
-    const baseY = lwBaseY_atX(baseX);
+    const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(frontOuterWidth);
     drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
   }
 } else {
   const baseX = frontBaseReferenceX;
-  const baseY = lwBaseY_atX(baseX);
+  const baseY = lwBaseY_atX(baseX); // <-- LW
   const halfW = widthToHalfPx(frontInnerWidth);
   drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
 }
 
 // ----------------------
-// Draw BACK darts
+// Draw BACK darts (bases on LW)
 // ----------------------
 if (backDouble) {
   // inner
   if (backInnerWidth > 0) {
     const baseX = backBaseReferenceX - separationPx;
-    const baseY = lwBaseY_atX(baseX);
+    const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(backInnerWidth);
     drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
   }
   // outer
   if (backOuterWidth > 0) {
     const baseX = backBaseReferenceX + separationPx;
-    const baseY = lwBaseY_atX(baseX);
+    const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(backOuterWidth);
     drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
   }
 } else {
   const baseX = backBaseReferenceX;
-  const baseY = lwBaseY_atX(baseX);
+  const baseY = lwBaseY_atX(baseX); // <-- LW
   const halfW = widthToHalfPx(backInnerWidth);
   drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
 }
