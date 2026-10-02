@@ -2268,15 +2268,17 @@ bodiceGroup.appendChild(verticalLineFromPointX);
 appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
 
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
-//
-// Assumes you already have (from STEP 29):
-// - waistLineY
-// - pointLW_X, pointLW_Y
-// - cfAnchorX
-//
-// And LW geometry:
-// - cbWaistIntersectionX, cbWaistIntersectionY
-// - lowerWaistLine endpoints used to form LW segment
+// Bases are drawn from the *sloped* Lower Waist Line (LW), and the dart legs
+// are extended slightly BELOW LW so the "lower part" is visible.
+
+/// Assumes the STEP 29/30 variables exist in your code:
+/// - bodiceGroup
+/// - scaleFactor
+/// - cfAnchorX
+/// - pointLW_X, pointLW_Y
+/// - cbWaistIntersectionX, cbWaistIntersectionY
+/// - bustLineY, trueBustLineY
+/// - frontInnerWidth/frontOuterWidth/backInnerWidth/backOuterWidth inputs exist
 
 // ----------------------
 // Lower Waist Line endpoints (from STEP 29)
@@ -2286,7 +2288,7 @@ const LW_Y1 = cbWaistIntersectionY;
 const LW_X2 = pointLW_X;
 const LW_Y2 = pointLW_Y;
 
-// Helper: y at x on the LW segment (so darts follow the sloped LW)
+// Helper: y at x on a segment (LW)
 function yOnSegment(x, x1, y1, x2, y2) {
   if (Math.abs(x2 - x1) < 1e-9) return y1;
   return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
@@ -2297,28 +2299,9 @@ function lwBaseY_atX(dartX) {
   return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
 }
 
-// Draw a dart as two lines from base edge points to a single apex
-function drawWaistDartLocal(baseX, baseY, halfWidthPx, apexY, color) {
-  const leftX = baseX - halfWidthPx;
-  const rightX = baseX + halfWidthPx;
-
-  const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  leg1.setAttribute('x1', leftX);
-  leg1.setAttribute('y1', baseY);
-  leg1.setAttribute('x2', baseX);
-  leg1.setAttribute('y2', apexY);
-  leg1.setAttribute('stroke', color);
-  leg1.setAttribute('stroke-width', '1.5');
-  bodiceGroup.appendChild(leg1);
-
-  const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  leg2.setAttribute('x1', rightX);
-  leg2.setAttribute('y1', baseY);
-  leg2.setAttribute('x2', baseX);
-  leg2.setAttribute('y2', apexY);
-  leg2.setAttribute('stroke', color);
-  leg2.setAttribute('stroke-width', '1.5');
-  bodiceGroup.appendChild(leg2);
+// Convert total dart width (inches) -> half-width in px
+function widthToHalfPx(widthInches) {
+  return (widthInches / 2) * scaleFactor;
 }
 
 // Read number safely
@@ -2328,15 +2311,52 @@ function readNumber(id, fallback) {
   return Number.isFinite(v) ? v : fallback;
 }
 
-// Convert total dart width (inches) -> half-width in px
-function widthToHalfPx(widthInches) {
-  return (widthInches / 2) * scaleFactor;
+// Draw dart with: (1) base/opening at LW (optional), (2) two legs up to apex,
+// and (3) extend legs downward BELOW LW so the lower part appears.
+function drawWaistDartLocal(baseX, baseY, halfWidthPx, apexY, color) {
+  const leftX = baseX - halfWidthPx;
+  const rightX = baseX + halfWidthPx;
+
+  // How far BELOW LW the legs should start so the lower part is visible.
+  // If you want more/less, tweak this value.
+  const lowerExtensionPx = 4 * scaleFactor;
+
+  const legStartY = baseY + lowerExtensionPx;
+
+  // Base/opening segment at LW (keeps the dart opening visible)
+  const baseSeg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  baseSeg.setAttribute('x1', leftX);
+  baseSeg.setAttribute('y1', baseY);
+  baseSeg.setAttribute('x2', rightX);
+  baseSeg.setAttribute('y2', baseY);
+  baseSeg.setAttribute('stroke', color);
+  baseSeg.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(baseSeg);
+
+  // Leg 1
+  const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg1.setAttribute('x1', leftX);
+  leg1.setAttribute('y1', legStartY);
+  leg1.setAttribute('x2', baseX);
+  leg1.setAttribute('y2', apexY);
+  leg1.setAttribute('stroke', color);
+  leg1.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg1);
+
+  // Leg 2
+  const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg2.setAttribute('x1', rightX);
+  leg2.setAttribute('y1', legStartY);
+  leg2.setAttribute('x2', baseX);
+  leg2.setAttribute('y2', apexY);
+  leg2.setAttribute('stroke', color);
+  leg2.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg2);
 }
 
 // ----------------------
-// Reference lines for dart tops (apex y positions)
+// Dart apex Y (top references)
 // ----------------------
-// Assumes you already have: bustLineY, trueBustLineY
 const FRONT_DROP_INCHES = 1.0;
 const BACK_DROP_INCHES  = 1.75;
 
@@ -2348,18 +2368,17 @@ const backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
 // ----------------------
 const separationPx = 0.35 * scaleFactor;
 
+// Front dart center reference
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
   : (cfAnchorX - 4 * scaleFactor);
 
-// BACK: corrected rule = from CB + (backWidth / 4)
-// (CB x is 50 in your code)
+// Back dart center reference (CB + backWidth/4 rule)
 const cbAnchorX = 50;
 
 const backWidthInchesTotal =
   readNumber('backWidth', 14.0) + readNumber('backWidthEase', 0.0);
 
-// center for back dart “tips” reference
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
 // ----------------------
@@ -2374,51 +2393,49 @@ const frontDouble = document.getElementById('doubleDartFront')?.checked;
 const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
 // ----------------------
-// Draw FRONT darts (bases on LW)
+// Draw FRONT darts (bases on LW, legs extend below LW)
 // ----------------------
 if (frontDouble) {
-  // inner
   if (frontInnerWidth > 0) {
     const baseX = frontBaseReferenceX - separationPx;
-    const baseY = lwBaseY_atX(baseX); // <-- LW
+    const baseY = lwBaseY_atX(baseX); // LW base
     const halfW = widthToHalfPx(frontInnerWidth);
     drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
   }
-  // outer
+
   if (frontOuterWidth > 0) {
     const baseX = frontBaseReferenceX + separationPx;
-    const baseY = lwBaseY_atX(baseX); // <-- LW
+    const baseY = lwBaseY_atX(baseX); // LW base
     const halfW = widthToHalfPx(frontOuterWidth);
     drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
   }
 } else {
   const baseX = frontBaseReferenceX;
-  const baseY = lwBaseY_atX(baseX); // <-- LW
+  const baseY = lwBaseY_atX(baseX); // LW base
   const halfW = widthToHalfPx(frontInnerWidth);
   drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
 }
 
 // ----------------------
-// Draw BACK darts (bases on LW)
+// Draw BACK darts (bases on LW, legs extend below LW)
 // ----------------------
 if (backDouble) {
-  // inner
   if (backInnerWidth > 0) {
     const baseX = backBaseReferenceX - separationPx;
-    const baseY = lwBaseY_atX(baseX); // <-- LW
+    const baseY = lwBaseY_atX(baseX); // LW base
     const halfW = widthToHalfPx(backInnerWidth);
     drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
   }
-  // outer
+
   if (backOuterWidth > 0) {
     const baseX = backBaseReferenceX + separationPx;
-    const baseY = lwBaseY_atX(baseX); // <-- LW
+    const baseY = lwBaseY_atX(baseX); // LW base
     const halfW = widthToHalfPx(backOuterWidth);
     drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
   }
 } else {
   const baseX = backBaseReferenceX;
-  const baseY = lwBaseY_atX(baseX); // <-- LW
+  const baseY = lwBaseY_atX(baseX); // LW base
   const halfW = widthToHalfPx(backInnerWidth);
   drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
 }
