@@ -2267,16 +2267,21 @@ bodiceGroup.appendChild(verticalLineFromPointX);
 // Label positioned near the waist line intersection
 appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
 
-// --- STEP 31 (CORRECTED LOWER PART ONLY): keep your TOP dart behavior unchanged, fix LOWER tip ---
-// Assumptions (must already exist in your code):
-// - bodiceGroup, scaleFactor
-// - cfAnchorX
+// --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
+//
+// This keeps your existing TOP dart behavior exactly (drawWaistDartLocal).
+// Then it ADDS a LOWER dart part that terminates at the corrected LOWER tip
+// (1.5–2 inches above hip line) without changing your upper darts.
+
+// ----------------------
+// Assumes you already have (from STEP 29):
 // - pointLW_X, pointLW_Y
+// - cfAnchorX
+//
+// And LW geometry:
 // - cbWaistIntersectionX, cbWaistIntersectionY
-// - trueBustLineY, bustLineY
-// - hipLineY (for “1.5–2 inches above hip” rule)
-// - inputs: frontInnerWidth/frontOuterWidth/backInnerWidth/backOuterWidth, toggles double flags
-// - frontBaseReferenceX / backBaseReferenceX logic as in your snippet
+// - bodiceGroup, scaleFactor
+// ----------------------
 
 // ----------------------
 // Lower Waist Line endpoints (from STEP 29)
@@ -2286,118 +2291,112 @@ const LW_Y1 = cbWaistIntersectionY;
 const LW_X2 = pointLW_X;
 const LW_Y2 = pointLW_Y;
 
+// Helper: y at x on the LW segment (so darts follow the sloped LW)
 function yOnSegment(x, x1, y1, x2, y2) {
   if (Math.abs(x2 - x1) < 1e-9) return y1;
   return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
 }
 
+// Dart base point comes from the *sloped* Lower Waist Line
 function lwBaseY_atX(dartX) {
   return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
 }
 
-function widthToHalfPx(widthInches) {
-  return (widthInches / 2) * scaleFactor;
+// Draw a dart as two lines from base edge points to a single apex (TOP part - keep)
+function drawWaistDartLocal(baseX, baseY, halfWidthPx, apexY, color) {
+  const leftX = baseX - halfWidthPx;
+  const rightX = baseX + halfWidthPx;
+
+  const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg1.setAttribute('x1', leftX);
+  leg1.setAttribute('y1', baseY);
+  leg1.setAttribute('x2', baseX);
+  leg1.setAttribute('y2', apexY);
+  leg1.setAttribute('stroke', color);
+  leg1.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg1);
+
+  const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg2.setAttribute('x1', rightX);
+  leg2.setAttribute('y1', baseY);
+  leg2.setAttribute('x2', baseX);
+  leg2.setAttribute('y2', apexY);
+  leg2.setAttribute('stroke', color);
+  leg2.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg2);
 }
 
+// Draw the LOWER dart part only (NEW)
+// Starts exactly at the same LW base edge points (baseY, leftX/rightX)
+// and converges to the corrected lower tip: 1.5–2" above hip line.
+function drawLowerWaistDartLocal(baseX, baseY, halfWidthPx, bottomApexY, color) {
+  const leftX = baseX - halfWidthPx;
+  const rightX = baseX + halfWidthPx;
+
+  const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg1.setAttribute('x1', leftX);
+  leg1.setAttribute('y1', baseY);        // start at LW (no kink)
+  leg1.setAttribute('x2', baseX);
+  leg1.setAttribute('y2', bottomApexY);  // corrected LOWER tip
+  leg1.setAttribute('stroke', color);
+  leg1.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg1);
+
+  const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg2.setAttribute('x1', rightX);
+  leg2.setAttribute('y1', baseY);        // start at LW (no kink)
+  leg2.setAttribute('x2', baseX);
+  leg2.setAttribute('y2', bottomApexY);  // corrected LOWER tip
+  leg2.setAttribute('stroke', color);
+  leg2.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg2);
+}
+
+// Read number safely
 function readNumber(id, fallback) {
   const el = document.getElementById(id);
   const v = el ? parseFloat(el.value) : NaN;
   return Number.isFinite(v) ? v : fallback;
 }
 
+// Convert total dart width (inches) -> half-width in px
+function widthToHalfPx(widthInches) {
+  return (widthInches / 2) * scaleFactor;
+}
+
 // ----------------------
-// Dart apex Y values
+// Reference lines for dart tops (apex y positions) - keep your values
 // ----------------------
-// TOP tips (DO NOT change - your upper darts are working)
-// (These are already what you had.)
 const FRONT_DROP_INCHES = 1.0;
 const BACK_DROP_INCHES  = 1.75;
 
 const frontApexY = trueBustLineY + (FRONT_DROP_INCHES * scaleFactor);
 const backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
 
-// LOWER tips (correct per your rule: 1.5–2 inches above hip)
-const BOTTOM_ABOVE_HIP_IN = 1.75; // pick 1.5 or 2 if you prefer; mid is 1.75
+// ----------------------
+// LOWER tip correction: stop 1.5–2 inches above hip line
+// ----------------------
+const BOTTOM_ABOVE_HIP_IN = 1.75; // choose 1.5 or 2 if you want; 1.75 is mid
 const frontBottomApexY = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
 const backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
-
-// ----------------------
-// IMPORTANT: keep your TOP drawing exactly as it was,
-// but add a separate LOWER dart part that converges to the LOWER tip.
-// ----------------------
-function drawWaistDartLocal(baseX, baseY, halfWidthPx, topApexY, bottomApexY, color) {
-  const leftX = baseX - halfWidthPx;
-  const rightX = baseX + halfWidthPx;
-
-  // keep your existing “visible lower part” trick for the TOP legs (unchanged)
-  const lowerExtensionPx = 4 * scaleFactor;
-  const legStartY_top = baseY + lowerExtensionPx;
-
-  // Base/opening segment at LW
-  const baseSeg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  baseSeg.setAttribute('x1', leftX);
-  baseSeg.setAttribute('y1', baseY);
-  baseSeg.setAttribute('x2', rightX);
-  baseSeg.setAttribute('y2', baseY);
-  baseSeg.setAttribute('stroke', color);
-  baseSeg.setAttribute('stroke-width', '1.5');
-  bodiceGroup.appendChild(baseSeg);
-
-  // --- TOP legs (UNCHANGED behavior) ---
-  const leg1_top = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  leg1_top.setAttribute('x1', leftX);
-  leg1_top.setAttribute('y1', legStartY_top);
-  leg1_top.setAttribute('x2', baseX);
-  leg1_top.setAttribute('y2', topApexY);
-  leg1_top.setAttribute('stroke', color);
-  leg1_top.setAttribute('stroke-width', '1.5');
-  bodiceGroup.appendChild(leg1_top);
-
-  const leg2_top = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  leg2_top.setAttribute('x1', rightX);
-  leg2_top.setAttribute('y1', legStartY_top);
-  leg2_top.setAttribute('x2', baseX);
-  leg2_top.setAttribute('y2', topApexY);
-  leg2_top.setAttribute('stroke', color);
-  leg2_top.setAttribute('stroke-width', '1.5');
-  bodiceGroup.appendChild(leg2_top);
-
-  // --- LOWER legs (FIX): start at the LOWER waist line, meet at bottomApexY ---
-  // This removes the “kink/warp” caused by using the wrong start position for the lower tip.
-  const leg1_bot = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  leg1_bot.setAttribute('x1', leftX);
-  leg1_bot.setAttribute('y1', baseY);        // key fix for lower part
-  leg1_bot.setAttribute('x2', baseX);
-  leg1_bot.setAttribute('y2', bottomApexY);  // key fix: correct lower tip
-  leg1_bot.setAttribute('stroke', color);
-  leg1_bot.setAttribute('stroke-width', '1.5');
-  bodiceGroup.appendChild(leg1_bot);
-
-  const leg2_bot = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  leg2_bot.setAttribute('x1', rightX);
-  leg2_bot.setAttribute('y1', baseY);       // key fix for lower part
-  leg2_bot.setAttribute('x2', baseX);
-  leg2_bot.setAttribute('y2', bottomApexY); // key fix: correct lower tip
-  leg2_bot.setAttribute('stroke', color);
-  leg2_bot.setAttribute('stroke-width', '1.5');
-  bodiceGroup.appendChild(leg2_bot);
-}
 
 // ----------------------
 // Dart x “centers” (base centers) + double-dart separation
 // ----------------------
 const separationPx = 0.35 * scaleFactor;
 
-// Front dart center reference
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
   : (cfAnchorX - 4 * scaleFactor);
 
-// Back dart center reference
+// BACK: corrected rule = from CB + (backWidth / 4)
+// (CB x is 50 in your code)
 const cbAnchorX = 50;
+
 const backWidthInchesTotal =
   readNumber('backWidth', 14.0) + readNumber('backWidthEase', 0.0);
 
+// center for back dart “tips” reference
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
 // ----------------------
@@ -2412,50 +2411,85 @@ const frontDouble = document.getElementById('doubleDartFront')?.checked;
 const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
 // ----------------------
-// Draw FRONT darts (bases on LW; TOP unchanged, LOWER fixed)
+// Draw FRONT darts (TOP using your original function, LOWER using corrected bottom tip)
 // ----------------------
 if (frontDouble) {
+  // inner
   if (frontInnerWidth > 0) {
     const baseX = frontBaseReferenceX - separationPx;
-    const baseY = lwBaseY_atX(baseX);
+    const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(frontInnerWidth);
-    drawWaistDartLocal(baseX, baseY, halfW, frontApexY, frontBottomApexY, '#e11d48');
+
+    // TOP (unchanged)
+    drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
+
+    // LOWER (added)
+    drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
   }
+  // outer
   if (frontOuterWidth > 0) {
     const baseX = frontBaseReferenceX + separationPx;
-    const baseY = lwBaseY_atX(baseX);
+    const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(frontOuterWidth);
-    drawWaistDartLocal(baseX, baseY, halfW, frontApexY, frontBottomApexY, '#e11d48');
+
+    // TOP (unchanged)
+    drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
+
+    // LOWER (added)
+    drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
   }
 } else {
   const baseX = frontBaseReferenceX;
-  const baseY = lwBaseY_atX(baseX);
+  const baseY = lwBaseY_atX(baseX); // <-- LW
   const halfW = widthToHalfPx(frontInnerWidth);
-  drawWaistDartLocal(baseX, baseY, halfW, frontApexY, frontBottomApexY, '#e11d48');
+
+  // TOP (unchanged)
+  drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
+
+  // LOWER (added)
+  drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
 }
 
 // ----------------------
-// Draw BACK darts (bases on LW; TOP unchanged, LOWER fixed)
+// Draw BACK darts (TOP using your original function, LOWER using corrected bottom tip)
 // ----------------------
 if (backDouble) {
+  // inner
   if (backInnerWidth > 0) {
     const baseX = backBaseReferenceX - separationPx;
-    const baseY = lwBaseY_atX(baseX);
+    const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(backInnerWidth);
-    drawWaistDartLocal(baseX, baseY, halfW, backApexY, backBottomApexY, '#9333ea');
+
+    // TOP (unchanged)
+    drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
+
+    // LOWER (added)
+    drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
   }
+  // outer
   if (backOuterWidth > 0) {
     const baseX = backBaseReferenceX + separationPx;
-    const baseY = lwBaseY_atX(baseX);
+    const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(backOuterWidth);
-    drawWaistDartLocal(baseX, baseY, halfW, backApexY, backBottomApexY, '#9333ea');
+
+    // TOP (unchanged)
+    drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
+
+    // LOWER (added)
+    drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
   }
 } else {
   const baseX = backBaseReferenceX;
-  const baseY = lwBaseY_atX(baseX);
+  const baseY = lwBaseY_atX(baseX); // <-- LW
   const halfW = widthToHalfPx(backInnerWidth);
-  drawWaistDartLocal(baseX, baseY, halfW, backApexY, backBottomApexY, '#9333ea');
+
+  // TOP (unchanged)
+  drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
+
+  // LOWER (added)
+  drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
 }
+
 
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
