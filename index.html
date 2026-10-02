@@ -2267,9 +2267,9 @@ bodiceGroup.appendChild(verticalLineFromPointX);
 // Label positioned near the waist line intersection
 appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
 
-// --- STEP 31: Draw waist darts (direct SVG lines) ---
+// --- STEP 31: Draw waist darts (directly into bodiceGroup) ---
 
-// Hip line = bottom of bodice rectangle
+// Hip line = bottom of the bodice rectangle
 const H_X1 = 50;
 const H_X2 = 50 + bWidth;
 const H_Y1 = 50 + bHeight;
@@ -2281,71 +2281,66 @@ const LW_Y1 = cbWaistIntersectionY;
 const LW_X2 = pointLW_X;
 const LW_Y2 = pointLW_Y;
 
-// Helper: y at x on a segment
+// Helper: y at x on a segment (linear)
 function yOnSegment(x, x1, y1, x2, y2) {
   if (Math.abs(x2 - x1) < 1e-9) return y1;
   return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
 }
 
-// Dart helper: two lines from (base edge points) to apex
-function drawWaistDart(bodiceGroup, baseX, baseY, halfWidthPx, tipY, color) {
+// Dart baseY from LOWER WAIST LINE (sloped)
+function lwBaseY_atX(dartX) {
+  return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
+}
+
+// Convert “dart length (inches)” to tipY position in px
+function tipYFromLength(baseY, lengthInches) {
+  return baseY - (lengthInches * scaleFactor);
+}
+
+// Draw a dart as two lines from base edge to a tip
+function drawWaistDartLocal(baseX, baseY, halfWidthPx, tipY, color) {
   const leftX = baseX - halfWidthPx;
   const rightX = baseX + halfWidthPx;
+  const apexX = baseX;
+  const apexY = tipY;
 
-  // left leg
   const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   leg1.setAttribute('x1', leftX);
   leg1.setAttribute('y1', baseY);
-  leg1.setAttribute('x2', baseX);
-  leg1.setAttribute('y2', tipY);
+  leg1.setAttribute('x2', apexX);
+  leg1.setAttribute('y2', apexY);
   leg1.setAttribute('stroke', color);
   leg1.setAttribute('stroke-width', '1.5');
   bodiceGroup.appendChild(leg1);
 
-  // right leg
   const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   leg2.setAttribute('x1', rightX);
   leg2.setAttribute('y1', baseY);
-  leg2.setAttribute('x2', baseX);
-  leg2.setAttribute('y2', tipY);
+  leg2.setAttribute('x2', apexX);
+  leg2.setAttribute('y2', apexY);
   leg2.setAttribute('stroke', color);
   leg2.setAttribute('stroke-width', '1.5');
   bodiceGroup.appendChild(leg2);
 }
 
-// Determine dart baseY from the LOWER WAIST LINE
-function lwBaseY_atX(dartX) {
-  return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
-}
-
-// Read dart options (from your HTML checkboxes)
-const frontDouble = document.getElementById('doubleDartFront')?.checked;
-const backDouble  = document.getElementById('doubleDartBack')?.checked;
-
-// Separation between double darts
-const separationPx = 0.35 * scaleFactor;
-
-// IMPORTANT: In your current HTML, you use `num(...)` elsewhere, but it may not exist.
-// So here we read inputs directly (safe approach).
+// Read inputs directly (no `num()` needed)
 function readNumber(id, fallback) {
   const el = document.getElementById(id);
   const v = el ? parseFloat(el.value) : NaN;
   return Number.isFinite(v) ? v : fallback;
 }
 
-// Width inputs are interpreted as total dart width IN INCHES.
-// Convert to half-width in pixels.
-function widthToHalfPx(widthInches) {
-  return (widthInches / 2) * scaleFactor;
+const frontDouble = document.getElementById('doubleDartFront')?.checked;
+const backDouble  = document.getElementById('doubleDartBack')?.checked;
+
+const separationPx = 0.35 * scaleFactor;
+
+// Your dart “width” inputs are interpreted as total dart width (inches)
+function widthToHalfPx(totalWidthInches) {
+  return (totalWidthInches / 2) * scaleFactor;
 }
 
-// Tip position using length in inches: tipY = baseY - length*scaleFactor
-function tipYFromLength(baseY, lengthInches) {
-  return baseY - (lengthInches * scaleFactor);
-}
-
-// Dart X reference points
-// (Use bustDartGuideLineX for front, and backWidthPointX for back if they exist.)
+// X references: reuse your existing guide variables if present
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
   : (cfAnchorX - 4 * scaleFactor);
@@ -2354,72 +2349,68 @@ const backBaseReferenceX = (typeof backWidthPointX !== 'undefined')
   ? backWidthPointX
   : (50 + 4 * scaleFactor);
 
-// FRONT darts
-const frontInnerWidth = readNumber('frontInnerWidth', 0.75);
+// FRONT dart settings
+const frontInnerWidth  = readNumber('frontInnerWidth', 0.75);
 const frontInnerLength = readNumber('frontInnerLength', 5.5);
-const frontOuterWidth = readNumber('frontOuterWidth', 0.75);
+const frontOuterWidth  = readNumber('frontOuterWidth', 0.75);
 const frontOuterLength = readNumber('frontOuterLength', 5.0);
 
+// BACK dart settings
+const backInnerWidth  = readNumber('backInnerWidth', 0.5);
+const backInnerLength = readNumber('backInnerLength', 5.0);
+const backOuterWidth  = readNumber('backOuterWidth', 0.5);
+const backOuterLength = readNumber('backOuterLength', 4.5);
+
+// FRONT darts
 if (frontDouble) {
   // inner
   {
     const baseX = frontBaseReferenceX - separationPx;
     const baseY = lwBaseY_atX(baseX);
-    const halfWidthPx = widthToHalfPx(frontInnerWidth);
+    const halfW = widthToHalfPx(frontInnerWidth);
     const tipY = tipYFromLength(baseY, frontInnerLength);
-    drawWaistDart(bodiceGroup, baseX, baseY, halfWidthPx, tipY, '#e11d48');
+    drawWaistDartLocal(baseX, baseY, halfW, tipY, '#e11d48');
   }
   // outer
   {
     const baseX = frontBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX);
-    const halfWidthPx = widthToHalfPx(frontOuterWidth);
+    const halfW = widthToHalfPx(frontOuterWidth);
     const tipY = tipYFromLength(baseY, frontOuterLength);
-    drawWaistDart(bodiceGroup, baseX, baseY, halfWidthPx, tipY, '#e11d48');
+    drawWaistDartLocal(baseX, baseY, halfW, tipY, '#e11d48');
   }
 } else {
-  // single: use inner settings as default
-  {
-    const baseX = frontBaseReferenceX;
-    const baseY = lwBaseY_atX(baseX);
-    const halfWidthPx = widthToHalfPx(frontInnerWidth);
-    const tipY = tipYFromLength(baseY, frontInnerLength);
-    drawWaistDart(bodiceGroup, baseX, baseY, halfWidthPx, tipY, '#e11d48');
-  }
+  const baseX = frontBaseReferenceX;
+  const baseY = lwBaseY_atX(baseX);
+  const halfW = widthToHalfPx(frontInnerWidth);
+  const tipY = tipYFromLength(baseY, frontInnerLength);
+  drawWaistDartLocal(baseX, baseY, halfW, tipY, '#e11d48');
 }
 
 // BACK darts
-const backInnerWidth = readNumber('backInnerWidth', 0.5);
-const backInnerLength = readNumber('backInnerLength', 5.0);
-const backOuterWidth = readNumber('backOuterWidth', 0.5);
-const backOuterLength = readNumber('backOuterLength', 4.5);
-
 if (backDouble) {
   // inner
   {
     const baseX = backBaseReferenceX - separationPx;
     const baseY = lwBaseY_atX(baseX);
-    const halfWidthPx = widthToHalfPx(backInnerWidth);
+    const halfW = widthToHalfPx(backInnerWidth);
     const tipY = tipYFromLength(baseY, backInnerLength);
-    drawWaistDart(bodiceGroup, baseX, baseY, halfWidthPx, tipY, '#9333ea');
+    drawWaistDartLocal(baseX, baseY, halfW, tipY, '#9333ea');
   }
   // outer
   {
     const baseX = backBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX);
-    const halfWidthPx = widthToHalfPx(backOuterWidth);
+    const halfW = widthToHalfPx(backOuterWidth);
     const tipY = tipYFromLength(baseY, backOuterLength);
-    drawWaistDart(bodiceGroup, baseX, baseY, halfWidthPx, tipY, '#9333ea');
+    drawWaistDartLocal(baseX, baseY, halfW, tipY, '#9333ea');
   }
 } else {
-  // single: use inner settings as default
-  {
-    const baseX = backBaseReferenceX;
-    const baseY = lwBaseY_atX(baseX);
-    const halfWidthPx = widthToHalfPx(backInnerWidth);
-    const tipY = tipYFromLength(baseY, backInnerLength);
-    drawWaistDart(bodiceGroup, baseX, baseY, halfWidthPx, tipY, '#9333ea');
-  }
+  const baseX = backBaseReferenceX;
+  const baseY = lwBaseY_atX(baseX);
+  const halfW = widthToHalfPx(backInnerWidth);
+  const tipY = tipYFromLength(baseY, backInnerLength);
+  drawWaistDartLocal(baseX, baseY, halfW, tipY, '#9333ea');
 }
 
         
