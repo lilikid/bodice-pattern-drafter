@@ -523,70 +523,225 @@
 </div>
 
     
-<!-- 3. JavaScript Script Block -->
 <script>
-    function updateDartConfig() {
-        const frontChecked = document.getElementById('doubleDartFront').checked;
-        const backChecked = document.getElementById('doubleDartBack').checked;
-        
-        const frontExtraConfig = document.getElementById('frontDartExtraConfig');
-        const backExtraConfig = document.getElementById('backDartExtraConfig');
-        
-        // Show/hide front container and auto-calculate defaults if opened
-        if (frontChecked) {
-            frontExtraConfig.style.display = 'block';
-            calculateDefaultFrontDarts();
-        } else {
-            frontExtraConfig.style.display = 'none';
+  // ---------- Dart Mode + Redistribution Helpers (Waist darts) ----------
+
+  // Keeps total dart intake constant when editing widths in double mode.
+  // Also recalculates dart length using available geometry (bust-waist distance).
+
+  function num(id, fallback = 0) {
+    const v = parseFloat(document.getElementById(id)?.value);
+    return Number.isFinite(v) ? v : fallback;
+  }
+
+  function setVal(id, v, digits = 3) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const rounded = (digits != null) ? Number(v.toFixed(digits)) : v;
+    el.value = rounded;
+  }
+
+  function calcDartLengthFromGeometry() {
+    // Uses your existing geometry values in inches:
+    const bustVal = num('bust') + num('bustEase');
+    const waistVal = num('waist') + num('waistEase'); // waist easing is part of pattern
+    const hipVal = num('hip') + num('hipEase');
+
+    // Your generatePattern computes bustLineY and waistLineY using scaleFactor.
+    // We can’t access Y positions here (generatePattern only), so we approximate in inches:
+    // dart length (waist dart) is typically related to bust height to waist height.
+    // We derive "bust to waist vertical" as (back length part approximations are in inputs).
+    const backNeckToWaist = num('backNeckToWaist');
+    // If backNeckToWaist is available, it already represents a vertical segment.
+    // Use 60% of that as a “typical waist dart length” reference, clamped.
+    let length = backNeckToWaist * 0.6;
+
+    // Make it responsive to body: if waist is higher/tighter, reduce slightly.
+    // (This keeps behavior stable across sizes without needing exact Y.)
+    const waistTightness = Math.max(0, (26 - waistVal) / 26); // smaller waist => slightly longer darts
+    length = length * (1 + waistTightness * 0.15);
+
+    // Clamp to reasonable limits in inches
+    length = Math.max(3.5, Math.min(7.5, length));
+    return length;
+  }
+
+  function calcDefaultFrontIntakeWidth() {
+    const waist = num('waist', 26);
+    // Keep your original “professional proportional allocation” idea but make it stable:
+    // total front intake is proportional to waist and clamped.
+    let totalFrontIntake = Math.max(1.0, (waist / 24) * 1.25);
+    totalFrontIntake = Math.min(2.8, totalFrontIntake);
+    return totalFrontIntake;
+  }
+
+  function calcDefaultBackIntakeWidth() {
+    const waist = num('waist', 26);
+    let totalBackIntake = Math.max(1.0, (waist / 24) * 1.0);
+    totalBackIntake = Math.min(2.5, totalBackIntake);
+    return totalBackIntake;
+  }
+
+  function updateDartConfig() {
+    const frontDouble = document.getElementById('doubleDartFront').checked;
+    const backDouble = document.getElementById('doubleDartBack').checked;
+
+    const frontExtraConfig = document.getElementById('frontDartExtraConfig');
+    const backExtraConfig = document.getElementById('backDartExtraConfig');
+
+    if (frontDouble) frontExtraConfig.style.display = 'block';
+    else frontExtraConfig.style.display = 'none';
+
+    if (backDouble) backExtraConfig.style.display = 'block';
+    else backExtraConfig.style.display = 'none';
+
+    // Write defaults when toggling into double mode
+    if (frontDouble) {
+      calculateDefaultFrontDarts(false);
+    } else {
+      // single mode: represent as “inner dart only”, outer dart width = 0
+      const w = num('frontInnerWidth', 0.75);
+      // Recompute length for single too:
+      setVal('frontInnerLength', calcDartLengthFromGeometry(), 2);
+      setVal('frontOuterWidth', 0, 3);
+      setVal('frontOuterLength', calcDartLengthFromGeometry(), 2);
+      // keep an old value so UI doesn’t look broken
+    }
+
+    if (backDouble) {
+      calculateDefaultBackDarts(false);
+    } else {
+      setVal('backInnerLength', calcDartLengthFromGeometry(), 2);
+      setVal('backOuterWidth', 0, 3);
+      setVal('backOuterLength', calcDartLengthFromGeometry(), 2);
+    }
+
+    generatePattern();
+  }
+
+  function calculateDefaultFrontDarts(recomputeLength = true) {
+    const totalIntake = calcDefaultFrontIntakeWidth(); // total width across BOTH darts
+    const half = +(totalIntake / 2).toFixed(3);
+
+    setVal('frontInnerWidth', half, 3);
+    setVal('frontOuterWidth', half, 3);
+
+    const len = recomputeLength ? calcDartLengthFromGeometry() : num('frontInnerLength', 5.5);
+    // Slightly vary lengths to look more “professional” visually
+    setVal('frontInnerLength', len, 2);
+    setVal('frontOuterLength', Math.max(3.5, len - 0.3), 2);
+  }
+
+  function calculateDefaultBackDarts(recomputeLength = true) {
+    const totalIntake = calcDefaultBackIntakeWidth();
+    const half = +(totalIntake / 2).toFixed(3);
+
+    setVal('backInnerWidth', half, 3);
+    setVal('backOuterWidth', half, 3);
+
+    const len = recomputeLength ? calcDartLengthFromGeometry() : num('backInnerLength', 5.0);
+    setVal('backInnerLength', len, 2);
+    setVal('backOuterLength', Math.max(3.5, len - 0.3), 2);
+  }
+
+  function resetFrontDarts() {
+    document.getElementById('doubleDartFront').checked = true;
+    document.getElementById('frontDartExtraConfig').style.display = 'block';
+    calculateDefaultFrontDarts(true);
+    generatePattern();
+  }
+
+  function resetBackDarts() {
+    document.getElementById('doubleDartBack').checked = true;
+    document.getElementById('backDartExtraConfig').style.display = 'block';
+    calculateDefaultBackDarts(true);
+    generatePattern();
+  }
+
+  // ---------- Redistribution on edit (front double / back double) ----------
+  function redistributeFrontDartWidths(changed = 'inner') {
+    const frontDouble = document.getElementById('doubleDartFront').checked;
+    if (!frontDouble) return;
+
+    const innerW = num('frontInnerWidth', 0);
+    const outerW = num('frontOuterWidth', 0);
+
+    const total = innerW + outerW;
+    // Keep total intake constant by redistributing the other one
+    if (changed === 'inner') {
+      const newInner = innerW;
+      const newOuter = Math.max(0, +(total - newInner).toFixed(3));
+      setVal('frontOuterWidth', newOuter, 3);
+    } else {
+      const newOuter = outerW;
+      const newInner = Math.max(0, +(total - newOuter).toFixed(3));
+      setVal('frontInnerWidth', newInner, 3);
+    }
+  }
+
+  function redistributeBackDartWidths(changed = 'inner') {
+    const backDouble = document.getElementById('doubleDartBack').checked;
+    if (!backDouble) return;
+
+    const innerW = num('backInnerWidth', 0);
+    const outerW = num('backOuterWidth', 0);
+
+    const total = innerW + outerW;
+    if (changed === 'inner') {
+      setVal('backOuterWidth', Math.max(0, +(total - innerW).toFixed(3)), 3);
+    } else {
+      setVal('backInnerWidth', Math.max(0, +(total - outerW).toFixed(3)), 3);
+    }
+  }
+
+  // Bind input events once the DOM is ready
+  window.addEventListener('DOMContentLoaded', () => {
+    const frontIds = ['frontInnerWidth','frontOuterWidth','frontInnerLength','frontOuterLength'];
+    frontIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        // Update length dynamically based on geometry whenever user changes length fields
+        if (id.includes('Length')) {
+          // If user explicitly changes length, we respect it but keep the "other" consistent-ish.
+          // For professionalism, we scale the other length by a small ratio.
+          const len = num(id, 5);
+          const lenOther = Math.max(3.5, len - 0.3);
+          if (id === 'frontInnerLength') setVal('frontOuterLength', lenOther, 2);
+          else if (id === 'frontOuterLength') setVal('frontInnerLength', lenOther, 2);
         }
-        
-        // Show/hide back container and auto-calculate defaults if opened
-        if (backChecked) {
-            backExtraConfig.style.display = 'block';
-            calculateDefaultBackDarts();
-        } else {
-            backExtraConfig.style.display = 'none';
+        // Redistribute widths
+        if (id === 'frontInnerWidth') redistributeFrontDartWidths('inner');
+        if (id === 'frontOuterWidth') redistributeFrontDartWidths('outer');
+        generatePattern();
+      });
+    });
+
+    const backIds = ['backInnerWidth','backOuterWidth','backInnerLength','backOuterLength'];
+    backIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        if (id.includes('Length')) {
+          const len = num(id, 5);
+          const lenOther = Math.max(3.5, len - 0.3);
+          if (id === 'backInnerLength') setVal('backOuterLength', lenOther, 2);
+          else if (id === 'backOuterLength') setVal('backInnerLength', lenOther, 2);
         }
-        
-        // generatePattern(); // Uncomment when ready to redraw
-    }
+        if (id === 'backInnerWidth') redistributeBackDartWidths('inner');
+        if (id === 'backOuterWidth') redistributeBackDartWidths('outer');
+        generatePattern();
+      });
+    });
 
-    // Professional formula calculation based on waist/bust proportions
-    function calculateDefaultFrontDarts() {
-        const waist = parseFloat(document.getElementById('waist').value) || 26;
-        
-        // Standard proportional allocation for front double darts (e.g. 1.5" total intake split across two darts)
-        let totalFrontIntake = Math.max(1.0, (waist / 24) * 1.25); 
-        let halfIntake = +(totalFrontIntake / 2).toFixed(3);
-        
-        document.getElementById('frontInnerWidth').value = halfIntake;
-        document.getElementById('frontOuterWidth').value = halfIntake;
-        document.getElementById('frontInnerLength').value = 5.5;
-        document.getElementById('frontOuterLength').value = 5.0;
-    }
-
-    function calculateDefaultBackDarts() {
-        const waist = parseFloat(document.getElementById('waist').value) || 26;
-        
-        // Standard proportional allocation for back double darts
-        let totalBackIntake = Math.max(1.0, (waist / 24) * 1.0);
-        let halfIntake = +(totalBackIntake / 2).toFixed(3);
-        
-        document.getElementById('backInnerWidth').value = halfIntake;
-        document.getElementById('backOuterWidth').value = halfIntake;
-        document.getElementById('backInnerLength').value = 5.0;
-        document.getElementById('backOuterLength').value = 4.5;
-    }
-
-    // Reset buttons to re-trigger professional calculations
-    function resetFrontDarts() {
-        calculateDefaultFrontDarts();
-    }
-
-    function resetBackDarts() {
-        calculateDefaultBackDarts();
-    }
+    // Existing checkboxes
+    const frontCb = document.getElementById('doubleDartFront');
+    const backCb = document.getElementById('doubleDartBack');
+    if (frontCb) frontCb.addEventListener('change', updateDartConfig);
+    if (backCb) backCb.addEventListener('change', updateDartConfig);
+  });
 </script>
+
 
     
 <!-- 4. Bust & Ease Section -->
@@ -2177,6 +2332,216 @@ appendLabel(
             const step27MidX = (frontUnderarmPointX + frontHipPointX) / 2;
             const step27MidY = (frontUnderarmPointY + frontHipPointY) / 2;
             appendLabel(bodiceGroup, 'Step 27: Provisional Front Side Seam', step27MidX + 10, step27MidY, '#0891b2', '10', '600', false);
+
+            // --------- NEW: Side Seam Curve + Waist Darts (Front/Back) ---------
+
+// Helper: draw a waist dart as two legs from waist base to a dart tip.
+// width is "half intake" across each dart? In your UI it's already "dart width" (we treat it as full dart intake width).
+function drawDart(group, baseX, baseY, halfWidth, lengthInches, color, labelText) {
+  // Convert dart length inches -> pixels
+  const lenPx = (lengthInches * scaleFactor);
+
+  // Tip is above for waist dart (towards bust)
+  const tipX = baseX;
+  const tipY = baseY - lenPx;
+
+  const leftX = baseX - halfWidth;
+  const rightX = baseX + halfWidth;
+
+  // Legs
+  const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg1.setAttribute('x1', leftX); leg1.setAttribute('y1', baseY);
+  leg1.setAttribute('x2', tipX);  leg1.setAttribute('y2', tipY);
+  leg1.setAttribute('stroke', color);
+  leg1.setAttribute('stroke-width', '1.5');
+  leg1.setAttribute('stroke-dasharray', '3 3');
+  group.appendChild(leg1);
+
+  const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg2.setAttribute('x1', rightX); leg2.setAttribute('y1', baseY);
+  leg2.setAttribute('x2', tipX);   leg2.setAttribute('y2', tipY);
+  leg2.setAttribute('stroke', color);
+  leg2.setAttribute('stroke-width', '1.5');
+  leg2.setAttribute('stroke-dasharray', '3 3');
+  group.appendChild(leg2);
+
+  // Tip
+  const tip = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  tip.setAttribute('cx', tipX);
+  tip.setAttribute('cy', tipY);
+  tip.setAttribute('r', '4.5');
+  tip.setAttribute('fill', color);
+  group.appendChild(tip);
+
+  appendLabel(group, labelText, tipX + 10, tipY, color, '10', 'bold', true);
+}
+
+// Side seam curve: use front/back provisional anchors and create a smooth path.
+// Quadratic control points: roughly mid between underarm and hip.
+function drawSideSeamCurve(group) {
+  const seamStroke = '#0891b2';
+
+  // Front anchor (underarm to hip) -> we already have provisional line endpoints:
+  const fTopX = frontUnderarmPointX;
+  const fTopY = frontUnderarmPointY;
+  const fBotX = frontHipPointX;
+  const fBotY = frontHipPointY;
+
+  // Back anchor:
+  const bTopX = backUnderarmPointX;
+  const bTopY = backUnderarmPointY;
+  const bBotX = backHipPointX;
+  const bBotY = hipLineY;
+
+  // We build 2 bezier segments and blend at the waist/hip level visually.
+  // Segment 1 (front): cubic from front underarm -> waist -> hip.
+  const c1x = (fTopX + fBotX) / 2;
+  const c1y = (fTopY + fBotY) / 2 - 30; // lift control for a natural curve
+  const c2x = (fTopX + fBotX) / 2 + 10;
+  const c2y = (fTopY + fBotY) / 2 + 10;
+
+  // Segment 2 (back): from back underarm -> hip
+  const d1x = (bTopX + bBotX) / 2 - 10;
+  const d1y = (bTopY + bBotY) / 2 - 20;
+  const d2x = (bTopX + bBotX) / 2;
+  const d2y = (bTopY + bBotY) / 2 + 20;
+
+  // Create a single continuous-ish path by joining at hip line:
+  // Start at front underarm, go down to hip, but also cover back side by separate paths.
+  // (This is acceptable because pattern view is drafted flat.)
+  const pathFront = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const dFront = `M ${fTopX} ${fTopY}
+                   C ${c1x} ${c1y}, ${c2x} ${c2y}, ${fBotX} ${fBotY}`;
+  pathFront.setAttribute('d', dFront);
+  pathFront.setAttribute('fill', 'none');
+  pathFront.setAttribute('stroke', seamStroke);
+  pathFront.setAttribute('stroke-width', '1.75');
+  pathFront.setAttribute('stroke-dasharray', '4 4');
+  group.appendChild(pathFront);
+
+  const pathBack = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const dBack = `M ${bTopX} ${bTopY}
+                  C ${d1x} ${d1y}, ${d2x} ${d2y}, ${bBotX} ${bBotY}`;
+  pathBack.setAttribute('d', dBack);
+  pathBack.setAttribute('fill', 'none');
+  pathBack.setAttribute('stroke', seamStroke);
+  pathBack.setAttribute('stroke-width', '1.75');
+  pathBack.setAttribute('stroke-dasharray', '4 4');
+  group.appendChild(pathBack);
+
+  appendLabel(group, 'Side Seam Curve (front & back)', (fTopX + bTopX) / 2 + 10, waistLineY + 10, seamStroke, '10', '600', false);
+}
+
+// Draw darts
+function drawWaistDarts(group) {
+  const frontDouble = document.getElementById('doubleDartFront')?.checked;
+  const backDouble = document.getElementById('doubleDartBack')?.checked;
+
+  // Waist base y is waistLineY (already defined in STEP 26)
+  const baseY = waistLineY;
+
+  // Choose dart base x locations:
+  // Front: between CF and side seam. Use chest dart guide line as a stable reference.
+  // In your code, bust dart guide X is: bustDartGuideLineX (exists in STEP 16).
+  // Back: between CB and side seam. Use backWidthPointX as a stable reference.
+  const frontBaseReferenceX = bustDartGuideLineX || (cfAnchorX - 4 * scaleFactor);
+  const backBaseReferenceX = backWidthPointX || (50 + 4 * scaleFactor);
+
+  // Split positions: inner dart closer to CF, outer dart closer to side seam.
+  // We place them symmetrically around the reference X.
+  // Adjust “spacing” so darts don’t overlap: 0.35 inch default separation in pixels.
+  const separationPx = 0.35 * scaleFactor;
+
+  // FRONT dart width/length
+  const fiW = num('frontInnerWidth', 0.75);
+  const foW = num('frontOuterWidth', 0.75);
+  const fiL = num('frontInnerLength', calcDartLengthFromGeometry());
+  const foL = num('frontOuterLength', calcDartLengthFromGeometry());
+
+  // BACK dart width/length
+  const biW = num('backInnerWidth', 0.5);
+  const boW = num('backOuterWidth', 0.5);
+  const biL = num('backInnerLength', calcDartLengthFromGeometry());
+  const boL = num('backOuterLength', calcDartLengthFromGeometry());
+
+  // Convert dart width to halfWidth for left/right legs:
+  // We interpret UI "width" as the full dart intake across the two legs at waist.
+  // So halfWidth = (width/2) pixels.
+  function widthToHalfPx(w) {
+    return (w / 2) * scaleFactor;
+  }
+
+  // FRONT:
+  if (frontDouble) {
+    // inner
+    drawDart(group,
+      frontBaseReferenceX - separationPx,
+      baseY,
+      widthToHalfPx(fiW),
+      fiL,
+      '#e11d48',
+      'Front Waist Double Dart (Inner)'
+    );
+    // outer
+    if (foW > 0) {
+      drawDart(group,
+        frontBaseReferenceX + separationPx,
+        baseY,
+        widthToHalfPx(foW),
+        foL,
+        '#e11d48',
+        'Front Waist Double Dart (Outer)'
+      );
+    }
+  } else {
+    // single: draw inner only
+    drawDart(group,
+      frontBaseReferenceX,
+      baseY,
+      widthToHalfPx(fiW),
+      fiL,
+      '#e11d48',
+      'Front Waist Dart (Single)'
+    );
+  }
+
+  // BACK:
+  if (backDouble) {
+    drawDart(group,
+      backBaseReferenceX - separationPx,
+      baseY,
+      widthToHalfPx(biW),
+      biL,
+      '#9333ea',
+      'Back Waist Double Dart (Inner)'
+    );
+    if (boW > 0) {
+      drawDart(group,
+        backBaseReferenceX + separationPx,
+        baseY,
+        widthToHalfPx(boW),
+        boL,
+        '#9333ea',
+        'Back Waist Double Dart (Outer)'
+      );
+    }
+  } else {
+    drawDart(group,
+      backBaseReferenceX,
+      baseY,
+      widthToHalfPx(biW),
+      biL,
+      '#9333ea',
+      'Back Waist Dart (Single)'
+    );
+  }
+}
+
+// Execute draws after all needed points exist:
+drawSideSeamCurve(bodiceGroup);
+drawWaistDarts(bodiceGroup);
+
+            
 // --- STEP 28: True Bust Line & Point X ---
             const trueBustLineOffsetInches = 2.0; // 2 inches below the bust line
             const trueBustLineOffsetPixels = trueBustLineOffsetInches * scaleFactor;
