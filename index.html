@@ -523,9 +523,10 @@
 </div>
 
     
-<script>
-  // ---------- Dart Mode + Redistribution Helpers (Waist darts) ----------
 
+ <!-- ---------- Dart Mode + Redistribution Helpers (Waist darts) ---------- -->
+
+<script>
   // Keeps total dart intake constant when editing widths in double mode.
   // Also recalculates dart length using available geometry (bust-waist distance).
 
@@ -552,12 +553,12 @@
     // dart length (waist dart) is typically related to bust height to waist height.
     // We derive "bust to waist vertical" as (back length part approximations are in inputs).
     const backNeckToWaist = num('backNeckToWaist');
+
     // If backNeckToWaist is available, it already represents a vertical segment.
     // Use 60% of that as a “typical waist dart length” reference, clamped.
     let length = backNeckToWaist * 0.6;
 
     // Make it responsive to body: if waist is higher/tighter, reduce slightly.
-    // (This keeps behavior stable across sizes without needing exact Y.)
     const waistTightness = Math.max(0, (26 - waistVal) / 26); // smaller waist => slightly longer darts
     length = length * (1 + waistTightness * 0.15);
 
@@ -568,8 +569,6 @@
 
   function calcDefaultFrontIntakeWidth() {
     const waist = num('waist', 26);
-    // Keep your original “professional proportional allocation” idea but make it stable:
-    // total front intake is proportional to waist and clamped.
     let totalFrontIntake = Math.max(1.0, (waist / 24) * 1.25);
     totalFrontIntake = Math.min(2.8, totalFrontIntake);
     return totalFrontIntake;
@@ -627,7 +626,6 @@
     setVal('frontOuterWidth', half, 3);
 
     const len = recomputeLength ? calcDartLengthFromGeometry() : num('frontInnerLength', 5.5);
-    // Slightly vary lengths to look more “professional” visually
     setVal('frontInnerLength', len, 2);
     setVal('frontOuterLength', Math.max(3.5, len - 0.3), 2);
   }
@@ -665,9 +663,8 @@
 
     const innerW = num('frontInnerWidth', 0);
     const outerW = num('frontOuterWidth', 0);
-
     const total = innerW + outerW;
-    // Keep total intake constant by redistributing the other one
+
     if (changed === 'inner') {
       const newInner = innerW;
       const newOuter = Math.max(0, +(total - newInner).toFixed(3));
@@ -685,14 +682,170 @@
 
     const innerW = num('backInnerWidth', 0);
     const outerW = num('backOuterWidth', 0);
-
     const total = innerW + outerW;
+
     if (changed === 'inner') {
       setVal('backOuterWidth', Math.max(0, +(total - innerW).toFixed(3)), 3);
     } else {
       setVal('backInnerWidth', Math.max(0, +(total - outerW).toFixed(3)), 3);
     }
   }
+
+  // =========================
+  // FIXED: professional darts + fixed baseYAt + no NaN
+  // =========================
+
+  function drawWaistDarts(group) {
+    const frontDouble = document.getElementById('doubleDartFront')?.checked;
+    const backDouble  = document.getElementById('doubleDartBack')?.checked;
+
+    // LW endpoints used by the dart base. Make this robust to undefined vars.
+    const lwX1 = 50;
+
+    // Important: pointLW_Y must exist; if not, fall back to waistLineY
+    const lwY1 = (typeof waistLineY === 'number') ? waistLineY : 0;
+    const lwX2 = (typeof cfAnchorX === 'number') ? cfAnchorX : lwX1;
+
+    const safePointLW_Y = (typeof pointLW_Y === 'number' && Number.isFinite(pointLW_Y))
+      ? pointLW_Y
+      : lwY1;
+
+    const lwY2 = safePointLW_Y;
+
+    // dart base y at x
+    function baseYAt(x) {
+      if (!Number.isFinite(x)) return lwY1; // prevent NaN killing rendering
+      return yOnLine(x, lwX1, lwY1, lwX2, lwY2);
+    }
+
+    // Choose dart base x locations:
+    const frontBaseReferenceX = (typeof bustDartGuideLineX === 'number' && Number.isFinite(bustDartGuideLineX))
+      ? bustDartGuideLineX
+      : (cfAnchorX - 4 * scaleFactor);
+
+    const backBaseReferenceX = (typeof backWidthPointX === 'number' && Number.isFinite(backWidthPointX))
+      ? backWidthPointX
+      : (50 + 4 * scaleFactor);
+
+    // Separation between double darts (pixels)
+    const separationPx = 0.35 * scaleFactor;
+
+    // Width/length
+    const fiW = num('frontInnerWidth', 0.75);
+    const foW = num('frontOuterWidth', 0.75);
+    const fiL = num('frontInnerLength', calcDartLengthFromGeometry());
+    const foL = num('frontOuterLength', calcDartLengthFromGeometry());
+
+    const biW = num('backInnerWidth', 0.5);
+    const boW = num('backOuterWidth', 0.5);
+    const biL = num('backInnerLength', calcDartLengthFromGeometry());
+    const boL = num('backOuterLength', calcDartLengthFromGeometry());
+
+    function widthToHalfPx(w) {
+      return (w / 2) * scaleFactor;
+    }
+
+    // PROFESSIONAL: "start below apex by few inches"
+    // Interpreting drawDart's "length" as apex reach. We shorten length by a drop.
+    // Use inches -> convert to px using scaleFactor so it matches your geometry units.
+    const apexDropInches = num('dartApexDropInches', 2); // "few inches" default = 2
+    const apexDropPx = apexDropInches * scaleFactor;
+
+    // If drawDart expects length in *inches*, then we must subtract in inches.
+    // We don't know your drawDart implementation units, so do the safest approach:
+    // - If your drawDart clearly takes "length" in inches (common in your code), subtract inches directly:
+    //   apexDropInches from L. This avoids unit mismatch.
+    // If you confirm drawDart uses inches, this is correct.
+    function professionalLengthInches(L) {
+      return Math.max(0.1, L - apexDropInches);
+    }
+
+    const fiL_pro = professionalLengthInches(fiL);
+    const foL_pro = professionalLengthInches(foL);
+    const biL_pro = professionalLengthInches(biL);
+    const boL_pro = professionalLengthInches(boL);
+
+    // FRONT:
+    if (frontDouble) {
+      const baseXInner = frontBaseReferenceX - separationPx;
+      drawDart(
+        group,
+        baseXInner,
+        baseYAt(baseXInner),   // FIX: use baseX, not undefined x
+        widthToHalfPx(fiW),
+        fiL_pro,
+        '#e11d48',
+        'Front Waist Double Dart (Inner)'
+      );
+
+      if (foW > 0) {
+        const baseXOuter = frontBaseReferenceX + separationPx;
+        drawDart(
+          group,
+          baseXOuter,
+          baseYAt(baseXOuter), // FIX
+          widthToHalfPx(foW),
+          foL_pro,
+          '#e11d48',
+          'Front Waist Double Dart (Outer)'
+        );
+      }
+    } else {
+      const baseX = frontBaseReferenceX;
+      drawDart(
+        group,
+        baseX,
+        baseYAt(baseX),         // FIX
+        widthToHalfPx(fiW),
+        fiL_pro,
+        '#e11d48',
+        'Front Waist Dart (Single)'
+      );
+    }
+
+    // BACK:
+    if (backDouble) {
+      const baseXInner = backBaseReferenceX - separationPx;
+      drawDart(
+        group,
+        baseXInner,
+        baseYAt(baseXInner),   // FIX
+        widthToHalfPx(biW),
+        biL_pro,
+        '#9333ea',
+        'Back Waist Double Dart (Inner)'
+      );
+
+      if (boW > 0) {
+        const baseXOuter = backBaseReferenceX + separationPx;
+        drawDart(
+          group,
+          baseXOuter,
+          baseYAt(baseXOuter), // FIX
+          widthToHalfPx(boW),
+          boL_pro,
+          '#9333ea',
+          'Back Waist Double Dart (Outer)'
+        );
+      }
+    } else {
+      const baseX = backBaseReferenceX;
+      drawDart(
+        group,
+        baseX,
+        baseYAt(baseX),         // FIX
+        widthToHalfPx(biW),
+        biL_pro,
+        '#9333ea',
+        'Back Waist Dart (Single)'
+      );
+    }
+  }
+
+  // Execute draws after all needed points exist:
+  // (keep these exactly where you previously called them)
+  // drawSideSeamCurve(bodiceGroup);
+  // drawWaistDarts(bodiceGroup);
 
   // Bind input events once the DOM is ready
   window.addEventListener('DOMContentLoaded', () => {
@@ -701,16 +854,12 @@
       const el = document.getElementById(id);
       if (!el) return;
       el.addEventListener('input', () => {
-        // Update length dynamically based on geometry whenever user changes length fields
         if (id.includes('Length')) {
-          // If user explicitly changes length, we respect it but keep the "other" consistent-ish.
-          // For professionalism, we scale the other length by a small ratio.
           const len = num(id, 5);
           const lenOther = Math.max(3.5, len - 0.3);
           if (id === 'frontInnerLength') setVal('frontOuterLength', lenOther, 2);
           else if (id === 'frontOuterLength') setVal('frontInnerLength', lenOther, 2);
         }
-        // Redistribute widths
         if (id === 'frontInnerWidth') redistributeFrontDartWidths('inner');
         if (id === 'frontOuterWidth') redistributeFrontDartWidths('outer');
         generatePattern();
@@ -736,9 +885,9 @@
 
     // Existing checkboxes
     const frontCb = document.getElementById('doubleDartFront');
-    const backCb = document.getElementById('doubleDartBack');
+    const backCb  = document.getElementById('doubleDartBack');
     if (frontCb) frontCb.addEventListener('change', updateDartConfig);
-    if (backCb) backCb.addEventListener('change', updateDartConfig);
+    if (backCb)  backCb.addEventListener('change', updateDartConfig);
   });
 </script>
 
