@@ -469,35 +469,57 @@
         </div>
     </div>
 
-    <div id="doubleDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
-        <div class="input-section">
-            <label>Secondary Dart Intake & Length</label>
-            <div class="dual-input">
-                <input type="number" id="secondaryDartIntake" value="1.5" step="0.25" title="Intake in inches">
-                <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="secondaryDartLength" value="5.5" step="0.25"></div>
-            </div>
+<!-- 1. Front Secondary Dart Config Box -->
+<div id="frontDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
+    <div class="input-section">
+        <label>Front Secondary Dart Intake & Length</label>
+        <div class="dual-input">
+            <input type="number" id="frontSecondaryIntake" value="1.5" step="0.25" title="Front Intake in inches">
+            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="frontSecondaryLength" value="5.5" step="0.25"></div>
         </div>
     </div>
+</div>
 
+<!-- 2. Back Secondary Dart Config Box -->
+<div id="backDartExtraConfig" style="display: none; margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--primary);">
+    <div class="input-section">
+        <label>Back Secondary Dart Intake & Length</label>
+        <div class="dual-input">
+            <input type="number" id="backSecondaryIntake" value="1.0" step="0.25" title="Back Intake in inches">
+            <div class="input-with-label"><span class="input-label-tag">Length</span><input type="number" id="backSecondaryLength" value="5.0" step="0.25"></div>
+        </div>
+    </div>
+</div>
 
-<!-- 2. JavaScript Script Block -->
+<!-- 3. JavaScript Script Block -->
 <script>
     function updateDartConfig() {
         const frontChecked = document.getElementById('doubleDartFront').checked;
         const backChecked = document.getElementById('doubleDartBack').checked;
-        const extraConfig = document.getElementById('doubleDartExtraConfig');
         
-        // Show the extra config block if either checkbox is checked
-        if (frontChecked || backChecked) {
-            extraConfig.style.display = 'block';
+        const frontExtraConfig = document.getElementById('frontDartExtraConfig');
+        const backExtraConfig = document.getElementById('backDartExtraConfig');
+        
+        // Toggle Front extra configuration block independently
+        if (frontChecked) {
+            frontExtraConfig.style.display = 'block';
         } else {
-            extraConfig.style.display = 'none';
+            frontExtraConfig.style.display = 'none';
         }
         
-        // Uncomment below once your pattern drawing logic is ready for it
-        // generatePattern(); 
+        // Toggle Back extra configuration block independently
+        if (backChecked) {
+            backExtraConfig.style.display = 'block';
+        } else {
+            backExtraConfig.style.display = 'none';
+        }
+        
+        // generatePattern(); // Uncomment when ready to redraw
     }
 </script>
+
+<!-- 4. Bust & Ease Section -->
+
                         <div class="input-section">
                             <label>Bust & Ease</label>
                             <div class="dual-input">
