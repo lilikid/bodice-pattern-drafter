@@ -2264,9 +2264,79 @@ verticalLineFromPointX.setAttribute('stroke-width', '1.5');
 verticalLineFromPointX.setAttribute('stroke-dasharray', '4 4');
 bodiceGroup.appendChild(verticalLineFromPointX);
 
+
 // Label positioned near the waist line intersection
 appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
-            
+
+        
+    // --- STEP 1: Gather Inputs & Ease ---
+    const bustInput = parseFloat(document.getElementById('bustInput').value) || 0;
+    const waistInput = parseFloat(document.getElementById('waistInput').value) || 0;
+    const easeBust = parseFloat(document.getElementById('easeBust').value) || 2.0;
+    const easeWaist = parseFloat(document.getElementById('easeWaist').value) || 0.5;
+
+    // UI Checkboxes for Darts
+    const isDoubleFrontChecked = document.getElementById('doubleFrontDartCheckbox').checked;
+    const isDoubleBackChecked = document.getElementById('doubleBackDartCheckbox').checked;
+
+    // Canvas Reference Points
+    const bustLineY = window.bodiceBlock ? bodiceBlock.bustLineY : 150;   
+    const apexPointX = window.bodiceBlock ? bodiceBlock.apexPointX : 200; 
+    const waistLineY = window.bodiceBlock ? bodiceBlock.waistLineY : 400; 
+
+    // --- STEP 2: Total Waist Suppression Required ---
+    const totalWaistExcess = Math.max(0, (bustInput + easeBust) - (waistInput + easeWaist));
+
+    // --- STEP 3: Side Seam Reduction (The Body Curve Foundation) ---
+    // Standard professional taper inward at the waist side seam (e.g., 0.5 inches per side seam)
+    const sideSeamReductionFront = 0.5; 
+    const sideSeamReductionBack = 0.5;
+    const totalSideSeamReduction = sideSeamReductionFront + sideSeamReductionBack;
+
+    // --- STEP 4: Remaining Balance for Vertical Darts ---
+    const remainingDartIntake = Math.max(0, totalWaistExcess - totalSideSeamReduction);
+
+    // Split remaining intake: ~40% to Front Darts, ~60% to Back Darts
+    let frontDartIntakeTotal = remainingDartIntake * 0.40; 
+    let backDartIntakeTotal = remainingDartIntake * 0.60;  
+
+    // --- STEP 5: Apply Single vs. Double Dart Logic ---
+    let frontDarts = [];
+    if (isDoubleFrontChecked) {
+        // Double Darts: Split into Inner and Outer front darts
+        frontDarts.push({ width: frontDartIntakeTotal * 0.6, length: (waistLineY - bustLineY) * 0.75 });
+        frontDarts.push({ width: frontDartIntakeTotal * 0.4, length: (waistLineY - bustLineY) * 0.70 });
+    } else {
+        // Single Dart Default: One central front dart
+        frontDarts.push({ width: frontDartIntakeTotal, length: (waistLineY - bustLineY) * 0.85 });
+    }
+
+    let backDarts = [];
+    if (isDoubleBackChecked) {
+        // Double Darts for Back
+        backDarts.push({ width: backDartIntakeTotal * 0.5, length: (waistLineY - bustLineY) * 0.70 });
+        backDarts.push({ width: backDartIntakeTotal * 0.5, length: (waistLineY - bustLineY) * 0.70 });
+    } else {
+        // Single Dart Default for Back
+        backDarts.push({ width: backDartIntakeTotal, length: (waistLineY - bustLineY) * 0.80 });
+    }
+
+    // --- STEP 6: Package and Pass to SVG Renderer ---
+    const patternMetrics = {
+        apexPointX,
+        bustLineY,
+        waistLineY,
+        sideSeamFront: sideSeamReductionFront,
+        sideSeamBack: sideSeamReductionBack,
+        frontDarts,
+        backDarts
+    };
+
+    if (typeof drawBodiceSVG === 'function') {
+        drawBodiceSVG(patternMetrics);
+    }
+
+           
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
