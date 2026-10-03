@@ -2532,7 +2532,8 @@ if (backDouble) {
 
   drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea'); // TOP
   drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea'); // LOWER
-}// --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
+}
+// --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
 // Uses your existing TOP dart apex rules (frontApexY / backApexY)
 // And uses the corrected LOWER tips (frontBottomApexY / backBottomApexY)
 // ONLY WIDTHS are recalculated from:
@@ -2543,10 +2544,10 @@ if (backDouble) {
 // ----------------------
 // LOWER Waist Line endpoints (from STEP 29)
 // ----------------------
-LW_X1 = cbWaistIntersectionX;
-LW_Y1 = cbWaistIntersectionY;
-LW_X2 = pointLW_X;
-LW_Y2 = pointLW_Y;
+const LW_X1 = cbWaistIntersectionX;
+const LW_Y1 = cbWaistIntersectionY;
+const LW_X2 = pointLW_X;
+const LW_Y2 = pointLW_Y;
 
 // Helper: y at x on the LW segment (so darts follow the sloped LW)
 function yOnSegment(x, x1, y1, x2, y2) {
@@ -2624,19 +2625,19 @@ function widthToHalfPx(widthInches) {
 // ----------------------
 // Reference lines for dart tops (apex y positions) - keep your values
 // ----------------------
-FRONT_DROP_INCHES = 1.0;
-BACK_DROP_INCHES  = 1.75;
+const FRONT_DROP_INCHES = 1.0;
+const BACK_DROP_INCHES  = 1.75;
 
-frontApexY = trueBustLineY + (FRONT_DROP_INCHES * scaleFactor);
-backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
+const frontApexY = trueBustLineY + (FRONT_DROP_INCHES * scaleFactor);
+const backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
 
 // ----------------------
 // LOWER tip correction: stop 1.5–2 inches above hip line
 // ----------------------
-BOTTOM_ABOVE_HIP_IN = 1.75; // mid (use 1.5 or 2 if you prefer)
+const BOTTOM_ABOVE_HIP_IN = 1.75; // mid (use 1.5 or 2 if you prefer)
 
-frontBottomApexY = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
-backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
+const frontBottomApexY = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
+const backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
 
 // ----------------------
 // Dart x “centers” (base centers) + double-dart separation
@@ -2780,8 +2781,6 @@ if (backDouble) {
   drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
   drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
 }
-
-
 
             
             // --- 2. SLEEVE BLOCK ---
