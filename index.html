@@ -1519,13 +1519,13 @@
 // Hip Line position (horizontal)
 const hipLineY = 50 + (backLengthVal + waistToHipVal) * scaleFactor;
 
-// ✅ Ensure we have a valid width (fixes: svgWidth is not defined)
+// ✅ Draw thin dotted horizontal line named "Hip Line"
+const svgEl = document.getElementById('svg-bodice'); // IMPORTANT: matches your SVG id
 const svgWidthLocal =
-  (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width)
-    ? svg.viewBox.baseVal.width
-    : svg.clientWidth; // fallback
+  (svgEl && svgEl.viewBox && svgEl.viewBox.baseVal && svgEl.viewBox.baseVal.width)
+    ? svgEl.viewBox.baseVal.width
+    : (svgEl ? svgEl.clientWidth : 800); // fallback
 
-// 1) Draw thin dotted horizontal line named "Hip Line"
 const hipLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 hipLine.setAttribute('x1', '0');
 hipLine.setAttribute('x2', String(svgWidthLocal));
@@ -1535,10 +1535,8 @@ hipLine.setAttribute('stroke', '#1E6BFF');
 hipLine.setAttribute('stroke-width', '1');
 hipLine.setAttribute('stroke-linecap', 'round');
 hipLine.setAttribute('stroke-dasharray', '2,4'); // dotted
-
 bodiceGroup.appendChild(hipLine);
 
-// Optional label text "Hip Line"
 const hipLineLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 hipLineLabel.setAttribute('x', '10');
 hipLineLabel.setAttribute('y', String(hipLineY - 8));
@@ -1550,11 +1548,12 @@ hipLineLabel.setAttribute('class', 'pattern-label');
 hipLineLabel.textContent = 'Hip Line';
 bodiceGroup.appendChild(hipLineLabel);
 
-// 2) Measure 1/4 of Hip and place Back Hip Point y
+// ¼ Hip point
 const quarterHipInches = hipVal / 4.0;
 const quarterHipPixels = quarterHipInches * scaleFactor;
 const backHipPointX = 50 + quarterHipPixels;
 
+// Back Hip Point y (circle + tick)
 const backHipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 backHipCircle.setAttribute('cx', backHipPointX);
 backHipCircle.setAttribute('cy', hipLineY);
@@ -1563,12 +1562,15 @@ backHipCircle.setAttribute('fill', '#2563eb'); // Blue
 bodiceGroup.appendChild(backHipCircle);
 
 const backHipTick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-backHipTick.setAttribute('x1', backHipPointX); backHipTick.setAttribute('y1', hipLineY - 8);
-backHipTick.setAttribute('x2', backHipPointX); backHipTick.setAttribute('y2', hipLineY + 8);
+backHipTick.setAttribute('x1', backHipPointX);
+backHipTick.setAttribute('y1', hipLineY - 8);
+backHipTick.setAttribute('x2', backHipPointX);
+backHipTick.setAttribute('y2', hipLineY + 8);
 backHipTick.setAttribute('stroke', '#2563eb');
 backHipTick.setAttribute('stroke-width', '2');
 bodiceGroup.appendChild(backHipTick);
 
+// Back Hip label (toggle visibility on click)
 const backHipLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 backHipLabel.setAttribute('x', backHipPointX);
 backHipLabel.setAttribute('y', hipLineY + 24);
@@ -1581,9 +1583,9 @@ backHipLabel.textContent = `Step 12: Back Hip Point y (${quarterHipInches.toFixe
 
 let isHidden12 = false;
 backHipLabel.addEventListener('click', (e) => {
-    e.stopPropagation();
-    isHidden12 = !isHidden12;
-    backHipLabel.style.display = isHidden12 ? 'none' : 'block';
+  e.stopPropagation();
+  isHidden12 = !isHidden12;
+  backHipLabel.style.display = isHidden12 ? 'none' : 'block';
 });
 bodiceGroup.appendChild(backHipLabel);
 
