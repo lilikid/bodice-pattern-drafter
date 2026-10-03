@@ -1516,43 +1516,72 @@
 
 
             // --- STEP 12: Measure from the left side along the Hip Line ¼ of the Hip measurement and label this point Back Hip Point y ---
-            const hipLineY = 50 + (backLengthVal + waistToHipVal) * scaleFactor;
 
-            const quarterHipInches = hipVal / 4.0;
-            const quarterHipPixels = quarterHipInches * scaleFactor;
-            const backHipPointX = 50 + quarterHipPixels;
+// Hip Line position (horizontal)
+const hipLineY = 50 + (backLengthVal + waistToHipVal) * scaleFactor;
 
-            const backHipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            backHipCircle.setAttribute('cx', backHipPointX);
-            backHipCircle.setAttribute('cy', hipLineY);
-            backHipCircle.setAttribute('r', '5.5');
-            backHipCircle.setAttribute('fill', '#2563eb'); // Blue
-            bodiceGroup.appendChild(backHipCircle);
+// 1) Draw thin dotted horizontal line named "Hip Line"
+const hipLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+hipLine.setAttribute('x1', '0');
+hipLine.setAttribute('x2', String(svgWidth)); // make sure svgWidth is your SVG width
+hipLine.setAttribute('y1', String(hipLineY));
+hipLine.setAttribute('y2', String(hipLineY));
+hipLine.setAttribute('stroke', '#1E6BFF');
+hipLine.setAttribute('stroke-width', '1');
+hipLine.setAttribute('stroke-linecap', 'round');
+// dotted
+hipLine.setAttribute('stroke-dasharray', '2,4');
 
-            const backHipTick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            backHipTick.setAttribute('x1', backHipPointX); backHipTick.setAttribute('y1', hipLineY - 8);
-            backHipTick.setAttribute('x2', backHipPointX); backHipTick.setAttribute('y2', hipLineY + 8);
-            backHipTick.setAttribute('stroke', '#2563eb');
-            backHipTick.setAttribute('stroke-width', '2');
-            bodiceGroup.appendChild(backHipTick);
+bodiceGroup.appendChild(hipLine);
 
-            const backHipLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            backHipLabel.setAttribute('x', backHipPointX);
-            backHipLabel.setAttribute('y', hipLineY + 24);
-            backHipLabel.setAttribute('font-family', 'Montserrat, sans-serif');
-            backHipLabel.setAttribute('font-size', '11');
-            backHipLabel.setAttribute('font-weight', 'bold');
-            backHipLabel.setAttribute('fill', '#2563eb');
-            backHipLabel.setAttribute('class', 'pattern-label');
-            backHipLabel.textContent = `Step 12: Back Hip Point y (${quarterHipInches.toFixed(2)}" / ${(quarterHipInches * 2.54).toFixed(1)}cm)`;
-            
-            let isHidden12 = false;
-            backHipLabel.addEventListener('click', (e) => {
-                e.stopPropagation();
-                isHidden12 = !isHidden12;
-                backHipLabel.style.display = isHidden12 ? 'none' : 'block';
-            });
-            bodiceGroup.appendChild(backHipLabel);
+// Optional: label text "Hip Line" near the left side of the line
+const hipLineLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+hipLineLabel.setAttribute('x', '10');
+hipLineLabel.setAttribute('y', String(hipLineY - 8));
+hipLineLabel.setAttribute('font-family', 'Montserrat, sans-serif');
+hipLineLabel.setAttribute('font-size', '11');
+hipLineLabel.setAttribute('font-weight', 'bold');
+hipLineLabel.setAttribute('fill', '#1E6BFF');
+hipLineLabel.setAttribute('class', 'pattern-label');
+hipLineLabel.textContent = 'Hip Line';
+bodiceGroup.appendChild(hipLineLabel);
+
+// 2) Measure 1/4 of Hip and place Back Hip Point y
+const quarterHipInches = hipVal / 4.0;
+const quarterHipPixels = quarterHipInches * scaleFactor;
+const backHipPointX = 50 + quarterHipPixels;
+
+const backHipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+backHipCircle.setAttribute('cx', backHipPointX);
+backHipCircle.setAttribute('cy', hipLineY);
+backHipCircle.setAttribute('r', '5.5');
+backHipCircle.setAttribute('fill', '#2563eb'); // Blue
+bodiceGroup.appendChild(backHipCircle);
+
+const backHipTick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+backHipTick.setAttribute('x1', backHipPointX); backHipTick.setAttribute('y1', hipLineY - 8);
+backHipTick.setAttribute('x2', backHipPointX); backHipTick.setAttribute('y2', hipLineY + 8);
+backHipTick.setAttribute('stroke', '#2563eb');
+backHipTick.setAttribute('stroke-width', '2');
+bodiceGroup.appendChild(backHipTick);
+
+const backHipLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+backHipLabel.setAttribute('x', backHipPointX);
+backHipLabel.setAttribute('y', hipLineY + 24);
+backHipLabel.setAttribute('font-family', 'Montserrat, sans-serif');
+backHipLabel.setAttribute('font-size', '11');
+backHipLabel.setAttribute('font-weight', 'bold');
+backHipLabel.setAttribute('fill', '#2563eb');
+backHipLabel.setAttribute('class', 'pattern-label');
+backHipLabel.textContent = `Step 12: Back Hip Point y (${quarterHipInches.toFixed(2)}" / ${(quarterHipInches * 2.54).toFixed(1)}cm)`;
+
+let isHidden12 = false;
+backHipLabel.addEventListener('click', (e) => {
+    e.stopPropagation();
+    isHidden12 = !isHidden12;
+    backHipLabel.style.display = isHidden12 ? 'none' : 'block';
+});
+bodiceGroup.appendChild(backHipLabel);
 
 
             // --- STEP 13: Join the Back Under Arm Point to the Back Hip Point with a straight guide line ---
