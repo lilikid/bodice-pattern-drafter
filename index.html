@@ -2624,19 +2624,19 @@ function widthToHalfPx(widthInches) {
 // ----------------------
 // Reference lines for dart tops (apex y positions) - keep your values
 // ----------------------
-const FRONT_DROP_INCHES = 1.0;
-const BACK_DROP_INCHES  = 1.75;
+FRONT_DROP_INCHES = 1.0;
+BACK_DROP_INCHES  = 1.75;
 
-const frontApexY = trueBustLineY + (FRONT_DROP_INCHES * scaleFactor);
-const backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
+frontApexY = trueBustLineY + (FRONT_DROP_INCHES * scaleFactor);
+backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
 
 // ----------------------
 // LOWER tip correction: stop 1.5–2 inches above hip line
 // ----------------------
-const BOTTOM_ABOVE_HIP_IN = 1.75; // mid (use 1.5 or 2 if you prefer)
+BOTTOM_ABOVE_HIP_IN = 1.75; // mid (use 1.5 or 2 if you prefer)
 
-const frontBottomApexY = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
-const backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
+frontBottomApexY = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
+backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
 
 // ----------------------
 // Dart x “centers” (base centers) + double-dart separation
