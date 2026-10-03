@@ -1519,21 +1519,26 @@
 // Hip Line position (horizontal)
 const hipLineY = 50 + (backLengthVal + waistToHipVal) * scaleFactor;
 
+// ✅ Ensure we have a valid width (fixes: svgWidth is not defined)
+const svgWidthLocal =
+  (svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width)
+    ? svg.viewBox.baseVal.width
+    : svg.clientWidth; // fallback
+
 // 1) Draw thin dotted horizontal line named "Hip Line"
 const hipLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 hipLine.setAttribute('x1', '0');
-hipLine.setAttribute('x2', String(svgWidth)); // make sure svgWidth is your SVG width
+hipLine.setAttribute('x2', String(svgWidthLocal));
 hipLine.setAttribute('y1', String(hipLineY));
 hipLine.setAttribute('y2', String(hipLineY));
 hipLine.setAttribute('stroke', '#1E6BFF');
 hipLine.setAttribute('stroke-width', '1');
 hipLine.setAttribute('stroke-linecap', 'round');
-// dotted
-hipLine.setAttribute('stroke-dasharray', '2,4');
+hipLine.setAttribute('stroke-dasharray', '2,4'); // dotted
 
 bodiceGroup.appendChild(hipLine);
 
-// Optional: label text "Hip Line" near the left side of the line
+// Optional label text "Hip Line"
 const hipLineLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 hipLineLabel.setAttribute('x', '10');
 hipLineLabel.setAttribute('y', String(hipLineY - 8));
