@@ -2351,29 +2351,23 @@ appendLabel(
 
 
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
-// Computes totalWaistExcess directly from your drawn block at the waist line
-// totalWaistExcess = max(0, drawnBlockWaistWidthPx - (totalWaistTarget * scaleFactor)) / scaleFactor
+// Uses your Step 28 trueBustLineY and bustLineY for dart termination rules.
 
-// ----------------------
-// LW endpoints (from STEP 29)
-// ----------------------
-const LW_X1 = cbWaistIntersectionX; // CB waist intersection X
-const LW_Y1 = cbWaistIntersectionY; // CB waist intersection Y
-const LW_X2 = pointLW_X;           // Point LW X (CF at lowered Y)
-const LW_Y2 = pointLW_Y;           // Point LW Y
+//
+// 1) LW endpoints (from STEP 29)
+//
+const LW_X1 = cbWaistIntersectionX;
+const LW_Y1 = cbWaistIntersectionY;
+const LW_X2 = pointLW_X;
+const LW_Y2 = pointLW_Y;
 
-// ----------------------
-// Helpers (use your existing ones if you already have them)
-// ----------------------
 function yOnSegment(x, x1, y1, x2, y2) {
   if (Math.abs(x2 - x1) < 1e-9) return y1;
   return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
 }
-
 function lwBaseY_atX(dartX) {
   return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
 }
-
 function widthToHalfPx(widthInches) {
   return (widthInches / 2) * scaleFactor;
 }
@@ -2424,63 +2418,66 @@ function drawLowerWaistDartLocal(baseX, baseY, halfWidthPx, bottomApexY, color) 
   bodiceGroup.appendChild(leg2);
 }
 
-// If your project already has a readNumber helper, remove this one.
-// (But it’s safe to keep if identical.)
 function readNumber(id, fallback) {
   const el = document.getElementById(id);
   const v = el ? parseFloat(el.value) : NaN;
   return Number.isFinite(v) ? v : fallback;
 }
 
-// ----------------------
-// UPDATED: compute totalWaistExcess (inches) from direct measurements
-// ----------------------
+//
+// 2) Dart TOP termination rules (from your Step 28)
+//    IMPORTANT: this must use trueBustLineY created in Step 28.
+//
+const frontTopTipY = trueBustLineY + (1.0 * scaleFactor); // 1" below True Bust Line
 
-// Your UI IDs (from your HTML):
-const waistInput = readNumber('waist', 0);     // inches
-const waistEase  = readNumber('waistEase', 0); // inches
+// For back, you said: 1.5" to 2" below upper Bust Line.
+// Choose one value. If you don’t specify, I’ll use 1.75".
+const backTopTipOffsetInches = 1.75;
+const backTopTipY = bustLineY + (backTopTipOffsetInches * scaleFactor);
 
-const totalWaistTarget = waistInput + waistEase; // inches
+//
+// 3) Lower dart apices (keep your earlier logic)
+//    If you already have these variables defined in earlier steps, use them.
+//    If you don’t, then you must tell me where/how they’re computed.
+//    (I won't invent them because that would break your rules.)
+//
+if (typeof frontBottomApexY === 'undefined') {
+  throw new Error('Step 31: frontBottomApexY is not defined. Define it in your earlier steps.');
+}
+if (typeof backBottomApexY === 'undefined') {
+  throw new Error('Step 31: backBottomApexY is not defined. Define it in your earlier steps.');
+}
 
-// drawn block width at waist line (px)
+//
+// 4) Compute total waist excess (UPDATED)
+const waistInput = readNumber('waist', 0);
+const waistEase  = readNumber('waistEase', 0);
+const totalWaistTarget = waistInput + waistEase;
+
 const drawnBlockWaistWidthPx = cfWaistIntersectionX - cbWaistIntersectionX;
+const excessPx = Math.max(0, drawnBlockWaistWidthPx - (totalWaistTarget * scaleFactor));
+const totalWaistExcess = excessPx / scaleFactor; // inches
 
-// excess in px (clamped >= 0)
-const excessPx = Math.max(
-  0,
-  drawnBlockWaistWidthPx - (totalWaistTarget * scaleFactor)
-);
-
-// convert excess back to inches (because dart widths later use inches)
-const totalWaistExcess = excessPx / scaleFactor;
-
-// ----------------------
-// Dart x centers + distribution
-// ----------------------
+//
+// 5) Distribution + drawing
 const separationPx = 0.35 * scaleFactor;
 
 const frontDouble = document.getElementById('doubleDartFront')?.checked;
 const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
-// Keep your existing/defined dart reference anchors.
-// (If your code already sets these earlier, do NOT redefine them.)
 const cbAnchorX = 50;
 
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
-  : (cfAnchorX - 4 * scaleFactor);
+  : (cbAnchorX - 4 * scaleFactor);
 
 const backWidthInchesTotal =
   readNumber('backWidth', 14.0) + readNumber('backWidthEase', 0.0);
 
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
-// ----------------------
-// Split waist excess into dart intakes (your existing rule)
-// ----------------------
-// 68% vertical darts; then 55% back / 45% front for the vertical dart intake
+// Intake rule you had:
 const verticalDartTotalIntake = totalWaistExcess * 0.68;
-
 const backDartTotalIntake  = verticalDartTotalIntake * 0.55;
 const frontDartTotalIntake = verticalDartTotalIntake * 0.45;
 
@@ -2503,28 +2500,24 @@ if (backDouble) {
   backOuterWidth = 0;
 }
 
-// ----------------------
-// Draw FRONT darts (TOP + LOWER)
-// frontApexY and frontBottomApexY must already exist from earlier steps
-// ----------------------
+//
+// FRONT darts (TOP + LOWER)
+//
 if (frontDouble) {
-  // inner
   if (frontInnerWidth > 0) {
     const baseX = frontBaseReferenceX - separationPx;
     const baseY = lwBaseY_atX(baseX);
     const halfW = widthToHalfPx(frontInnerWidth);
 
-    drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
+    drawWaistDartLocal(baseX, baseY, halfW, frontTopTipY, '#e11d48');
     drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
   }
-
-  // outer
   if (frontOuterWidth > 0) {
     const baseX = frontBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX);
     const halfW = widthToHalfPx(frontOuterWidth);
 
-    drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
+    drawWaistDartLocal(baseX, baseY, halfW, frontTopTipY, '#e11d48');
     drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
   }
 } else {
@@ -2532,32 +2525,28 @@ if (frontDouble) {
   const baseY = lwBaseY_atX(baseX);
   const halfW = widthToHalfPx(frontInnerWidth);
 
-  drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
+  drawWaistDartLocal(baseX, baseY, halfW, frontTopTipY, '#e11d48');
   drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
 }
 
-// ----------------------
-// Draw BACK darts (TOP + LOWER)
-// backApexY and backBottomApexY must already exist from earlier steps
-// ----------------------
+//
+// BACK darts (TOP + LOWER)
+//
 if (backDouble) {
-  // inner
   if (backInnerWidth > 0) {
     const baseX = backBaseReferenceX - separationPx;
     const baseY = lwBaseY_atX(baseX);
     const halfW = widthToHalfPx(backInnerWidth);
 
-    drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
+    drawWaistDartLocal(baseX, baseY, halfW, backTopTipY, '#9333ea');
     drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
   }
-
-  // outer
   if (backOuterWidth > 0) {
     const baseX = backBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX);
     const halfW = widthToHalfPx(backOuterWidth);
 
-    drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
+    drawWaistDartLocal(baseX, baseY, halfW, backTopTipY, '#9333ea');
     drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
   }
 } else {
@@ -2565,7 +2554,7 @@ if (backDouble) {
   const baseY = lwBaseY_atX(baseX);
   const halfW = widthToHalfPx(backInnerWidth);
 
-  drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
+  drawWaistDartLocal(baseX, baseY, halfW, backTopTipY, '#9333ea');
   drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
 }
 
