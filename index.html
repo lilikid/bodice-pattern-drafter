@@ -2350,14 +2350,21 @@ appendLabel(
 );
 
 
-// --- STEP 31: Draw waist darts on LW (KEEP your apex/length rules; UPDATE WIDHTS only) ---
+// --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
+// Computes totalWaistExcess directly from your drawn block at the waist line
+// totalWaistExcess = max(0, drawnBlockWaistWidthPx - (totalWaistTarget * scaleFactor)) / scaleFactor
 
-const LW_X1 = cbWaistIntersectionX;
-const LW_Y1 = cbWaistIntersectionY;
-const LW_X2 = pointLW_X;
-const LW_Y2 = pointLW_Y;
+// ----------------------
+// LW endpoints (from STEP 29)
+// ----------------------
+const LW_X1 = cbWaistIntersectionX; // CB waist intersection X
+const LW_Y1 = cbWaistIntersectionY; // CB waist intersection Y
+const LW_X2 = pointLW_X;           // Point LW X (CF at lowered Y)
+const LW_Y2 = pointLW_Y;           // Point LW Y
 
-// y-at-x on sloped LW
+// ----------------------
+// Helpers (use your existing ones if you already have them)
+// ----------------------
 function yOnSegment(x, x1, y1, x2, y2) {
   if (Math.abs(x2 - x1) < 1e-9) return y1;
   return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
@@ -2365,6 +2372,10 @@ function yOnSegment(x, x1, y1, x2, y2) {
 
 function lwBaseY_atX(dartX) {
   return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
+}
+
+function widthToHalfPx(widthInches) {
+  return (widthInches / 2) * scaleFactor;
 }
 
 function drawWaistDartLocal(baseX, baseY, halfWidthPx, apexY, color) {
@@ -2413,61 +2424,68 @@ function drawLowerWaistDartLocal(baseX, baseY, halfWidthPx, bottomApexY, color) 
   bodiceGroup.appendChild(leg2);
 }
 
-function widthToHalfPx(widthInches) {
-  return (widthInches / 2) * scaleFactor;
-}
-
+// If your project already has a readNumber helper, remove this one.
+// (But it’s safe to keep if identical.)
 function readNumber(id, fallback) {
   const el = document.getElementById(id);
   const v = el ? parseFloat(el.value) : NaN;
   return Number.isFinite(v) ? v : fallback;
 }
 
+// ----------------------
+// UPDATED: compute totalWaistExcess (inches) from direct measurements
+// ----------------------
 
-// ---- KEEP your apex/length rules ----
-const FRONT_DROP_INCHES = 1.0;
-const BACK_DROP_INCHES  = 1.75;
+// Your UI IDs (from your HTML):
+const waistInput = readNumber('waist', 0);     // inches
+const waistEase  = readNumber('waistEase', 0); // inches
 
-const frontApexY = trueBustLineY + (FRONT_DROP_INCHES * scaleFactor);
-const backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
+const totalWaistTarget = waistInput + waistEase; // inches
 
-const BOTTOM_ABOVE_HIP_IN = 1.75;
+// drawn block width at waist line (px)
+const drawnBlockWaistWidthPx = cfWaistIntersectionX - cbWaistIntersectionX;
 
-const frontBottomApexY = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
-const backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
+// excess in px (clamped >= 0)
+const excessPx = Math.max(
+  0,
+  drawnBlockWaistWidthPx - (totalWaistTarget * scaleFactor)
+);
 
+// convert excess back to inches (because dart widths later use inches)
+const totalWaistExcess = excessPx / scaleFactor;
 
-// ---- x centers + separation (keep your rule) ----
+// ----------------------
+// Dart x centers + distribution
+// ----------------------
 const separationPx = 0.35 * scaleFactor;
 
 const frontDouble = document.getElementById('doubleDartFront')?.checked;
 const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
+// Keep your existing/defined dart reference anchors.
+// (If your code already sets these earlier, do NOT redefine them.)
+const cbAnchorX = 50;
+
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
   : (cfAnchorX - 4 * scaleFactor);
-
-const cbAnchorX = 50;
 
 const backWidthInchesTotal =
   readNumber('backWidth', 14.0) + readNumber('backWidthEase', 0.0);
 
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
-
-// =======================================================
-// UPDATED: compute WIDHTS from totalWaistExcess
-// 32% side seam / 68% vertical darts
-// 55% back / 45% front
-// double: front inner 60% outer 40%; back inner 50% outer 50%
-// single: takes 100% on inner (outer=0)
-// =======================================================
+// ----------------------
+// Split waist excess into dart intakes (your existing rule)
+// ----------------------
+// 68% vertical darts; then 55% back / 45% front for the vertical dart intake
 const verticalDartTotalIntake = totalWaistExcess * 0.68;
+
 const backDartTotalIntake  = verticalDartTotalIntake * 0.55;
 const frontDartTotalIntake = verticalDartTotalIntake * 0.45;
 
 let frontInnerWidth = 0, frontOuterWidth = 0;
-let backInnerWidth  = 0, backOuterWidth  = 0;
+let backInnerWidth = 0, backOuterWidth = 0;
 
 if (frontDouble) {
   frontInnerWidth = frontDartTotalIntake * 0.60;
@@ -2485,8 +2503,10 @@ if (backDouble) {
   backOuterWidth = 0;
 }
 
-
-// ---- Draw FRONT darts ----
+// ----------------------
+// Draw FRONT darts (TOP + LOWER)
+// frontApexY and frontBottomApexY must already exist from earlier steps
+// ----------------------
 if (frontDouble) {
   // inner
   if (frontInnerWidth > 0) {
@@ -2497,6 +2517,7 @@ if (frontDouble) {
     drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
     drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
   }
+
   // outer
   if (frontOuterWidth > 0) {
     const baseX = frontBaseReferenceX + separationPx;
@@ -2515,8 +2536,10 @@ if (frontDouble) {
   drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
 }
 
-
-// ---- Draw BACK darts ----
+// ----------------------
+// Draw BACK darts (TOP + LOWER)
+// backApexY and backBottomApexY must already exist from earlier steps
+// ----------------------
 if (backDouble) {
   // inner
   if (backInnerWidth > 0) {
@@ -2527,6 +2550,7 @@ if (backDouble) {
     drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
     drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
   }
+
   // outer
   if (backOuterWidth > 0) {
     const baseX = backBaseReferenceX + separationPx;
