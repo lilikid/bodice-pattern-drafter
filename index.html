@@ -2471,6 +2471,14 @@ const backWidthInchesTotal =
 
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
+ console.log('drawnBlockWaistWidthPx', drawnBlockWaistWidthPx);
+console.log('totalWaistTarget', totalWaistTarget, 'scaleFactor', scaleFactor);
+console.log('excessPx', excessPx, 'totalWaistExcess', totalWaistExcess);
+console.log('frontDouble/backDouble',
+  document.getElementById('doubleDartFront')?.checked,
+  document.getElementById('doubleDartBack')?.checked
+);
+
 // Intake rule
 const verticalDartTotalIntake = totalWaistExcess * 0.68;
 const backDartTotalIntake  = verticalDartTotalIntake * 0.55;
