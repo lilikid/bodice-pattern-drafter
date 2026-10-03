@@ -1519,24 +1519,11 @@
 // Hip Line Y position
 const hipLineY = 50 + (backLengthVal + waistToHipVal) * scaleFactor;
 
-// ✅ Keep Hip Line INSIDE the bodice block: between CB and CF vertical lines
-// Option A (preferred): read x positions from existing CB/CF line elements (make sure their ids match)
-let xCB, xCF;
+// ✅ Keep Hip Line INSIDE the bodice block: between CB and CF vertical boundaries
+// From your CB/CF vertical text x positions:
+const xCF = 50 + bWidth - 12; // Center Front line boundary (right)
+const xCB = 50 + 12;          // Center Back line boundary (left)
 
-const cbEl = document.getElementById('cbLine'); // <-- change to your real CB line id
-const cfEl = document.getElementById('cfLine'); // <-- change to your real CF line id
-
-if (cbEl && cfEl) {
-  xCB = parseFloat(cbEl.getAttribute('x1')) || parseFloat(cbEl.getAttribute('cx1')) || 0;
-  xCF = parseFloat(cfEl.getAttribute('x1')) || parseFloat(cfEl.getAttribute('cx1')) || 0;
-} else {
-  // Option B (fallback): use your existing variables (rename these to your real ones)
-  // e.g. const xCB = CBx; const xCF = CFx;
-  xCB = (typeof CBx !== 'undefined') ? CBx : 50;
-  xCF = (typeof CFx !== 'undefined') ? CFx : 400;
-}
-
-// ensure correct order (left to right)
 const xLeft = Math.min(xCB, xCF);
 const xRight = Math.max(xCB, xCF);
 
@@ -1564,34 +1551,33 @@ hipLineLabel.setAttribute('class', 'pattern-label');
 hipLineLabel.textContent = 'Hip Line';
 bodiceGroup.appendChild(hipLineLabel);
 
-// ¼ Hip point (measured from the LEFT boundary of bodice block)
+// ¼ Hip point (measured from the LEFT boundary of the bodice block = CB)
 const quarterHipInches = hipVal / 4.0;
 const quarterHipPixels = quarterHipInches * scaleFactor;
 
-// place point relative to xLeft (CB side)
 const backHipPointX = xLeft + quarterHipPixels;
 
-// Back Hip Circle + Tick
+// Back Hip Point y
 const backHipCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-backHipCircle.setAttribute('cx', backHipPointX);
-backHipCircle.setAttribute('cy', hipLineY);
+backHipCircle.setAttribute('cx', String(backHipPointX));
+backHipCircle.setAttribute('cy', String(hipLineY));
 backHipCircle.setAttribute('r', '5.5');
 backHipCircle.setAttribute('fill', '#2563eb');
 bodiceGroup.appendChild(backHipCircle);
 
 const backHipTick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-backHipTick.setAttribute('x1', backHipPointX);
-backHipTick.setAttribute('y1', hipLineY - 8);
-backHipTick.setAttribute('x2', backHipPointX);
-backHipTick.setAttribute('y2', hipLineY + 8);
+backHipTick.setAttribute('x1', String(backHipPointX));
+backHipTick.setAttribute('y1', String(hipLineY - 8));
+backHipTick.setAttribute('x2', String(backHipPointX));
+backHipTick.setAttribute('y2', String(hipLineY + 8));
 backHipTick.setAttribute('stroke', '#2563eb');
 backHipTick.setAttribute('stroke-width', '2');
 bodiceGroup.appendChild(backHipTick);
 
 // Back Hip label (toggle visibility on click)
 const backHipLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-backHipLabel.setAttribute('x', backHipPointX);
-backHipLabel.setAttribute('y', hipLineY + 24);
+backHipLabel.setAttribute('x', String(backHipPointX));
+backHipLabel.setAttribute('y', String(hipLineY + 24));
 backHipLabel.setAttribute('font-family', 'Montserrat, sans-serif');
 backHipLabel.setAttribute('font-size', '11');
 backHipLabel.setAttribute('font-weight', 'bold');
@@ -1606,6 +1592,7 @@ backHipLabel.addEventListener('click', (e) => {
   backHipLabel.style.display = isHidden12 ? 'none' : 'block';
 });
 bodiceGroup.appendChild(backHipLabel);
+
 
 
 
