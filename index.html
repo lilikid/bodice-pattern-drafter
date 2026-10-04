@@ -2554,24 +2554,33 @@ if (backDouble) {
 }
 
 //
-// ===== SIDE SEAM INTAKE darts (connect LW to side seam segments) =====
+// ==============================
+// STEP 31: SIDE SEAM INTAKE DARTS
+// (Front dart apex and back dart apex go in opposite directions)
+// ==============================
 
-// helpers
+// ---------- helpers ----------
 function segIntersection(x1,y1,x2,y2, x3,y3,x4,y4) {
-  // Intersection of segments (p1->p2) and (p3->p4)
   const den = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
   if (Math.abs(den) < 1e-9) return null;
 
-  const px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / den;
-  const py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / den;
+  const px =
+    ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / den;
+  const py =
+    ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / den;
 
-  // check within segment bounds with tolerance
+  // segment bounds check
   const tol = 0.01;
 
-  const in1 = (px >= Math.min(x1,x2)-tol && px <= Math.max(x1,x2)+tol && py >= Math.min(y1,y2)-tol && py <= Math.max(y1,y2)+tol);
-  const in2 = (px >= Math.min(x3,x4)-tol && px <= Math.max(x3,x4)+tol && py >= Math.min(y3,y4)-tol && py <= Math.max(y3,y4)+tol);
+  const in1 =
+    px >= Math.min(x1,x2)-tol && px <= Math.max(x1,x2)+tol &&
+    py >= Math.min(y1,y2)-tol && py <= Math.max(y1,y2)+tol;
 
-  return (in1 && in2) ? {x:px, y:py} : null;
+  const in2 =
+    px >= Math.min(x3,x4)-tol && px <= Math.max(x3,x4)+tol &&
+    py >= Math.min(y3,y4)-tol && py <= Math.max(y3,y4)+tol;
+
+  return (in1 && in2) ? { x: px, y: py } : null;
 }
 
 function makeCircle(x,y,r,color, opacity=1) {
@@ -2585,7 +2594,7 @@ function makeCircle(x,y,r,color, opacity=1) {
 }
 
 function drawLeg(x1,y1, x2,y2, color) {
-  const leg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  const leg = document.createElementNS('http://www.w3.org/2000/svg','line');
   leg.setAttribute('x1', x1);
   leg.setAttribute('y1', y1);
   leg.setAttribute('x2', x2);
@@ -2595,83 +2604,81 @@ function drawLeg(x1,y1, x2,y2, color) {
   bodiceGroup.appendChild(leg);
 }
 
-// 1) side intake distribution (match your earlier sideRatio=0.32 logic)
-const sideRatioTotal = 0.32;       // both sides combined
-const sideRatioPerSide = sideRatioTotal / 2; // front side only
+// ---------- 1) side intake (uses your existing totalWaistExcess logic) ----------
+const sideRatioTotal = 0.32;        // both sides combined
+const sideRatioPerSide = sideRatioTotal / 2;
 
 const frontSideIntakeInches = totalWaistExcess * sideRatioPerSide;
 const backSideIntakeInches  = totalWaistExcess * sideRatioPerSide;
 
-// 2) intersection between LW segment and each side seam segment
+const frontShiftPx = frontSideIntakeInches * scaleFactor;
+const backShiftPx  = backSideIntakeInches  * scaleFactor;
+
+// ---------- 2) Build segments and find intersections ----------
 const LWline = { x1: LW_X1, y1: LW_Y1, x2: LW_X2, y2: LW_Y2 };
 
-// These are your side seam guide segments from STEP 23/27 and STEP 9/12/13
+// These variable names must match what you already have in your earlier steps:
 const frontSeam = {
   x1: frontUnderarmPointX,
-  y1: frontUnderarmPointY, // = bustLineY
+  y1: frontUnderarmPointY, // bustLineY
   x2: frontHipPointX,
-  y2: frontHipPointY       // = hipLineY
+  y2: frontHipPointY       // hipLineY
 };
 
 const backSeam = {
   x1: backUnderarmPointX,
-  y1: backUnderarmPointY,  // = bustLineY
+  y1: backUnderarmPointY,  // bustLineY
   x2: backHipPointX,
   y2: hipLineY
 };
 
+// Intersection points between LW line and each side seam
 const frontI = segIntersection(
-  LWline.x1,LWline.y1,LWline.x2,LWline.y2,
-  frontSeam.x1,frontSeam.y1,frontSeam.x2,frontSeam.y2
+  LWline.x1, LWline.y1, LWline.x2, LWline.y2,
+  frontSeam.x1, frontSeam.y1, frontSeam.x2, frontSeam.y2
 );
 
 const backI = segIntersection(
-  LWline.x1,LWline.y1,LWline.x2,LWline.y2,
-  backSeam.x1,backSeam.y1,backSeam.x2,backSeam.y2
+  LWline.x1, LWline.y1, LWline.x2, LWline.y2,
+  backSeam.x1, backSeam.y1, backSeam.x2, backSeam.y2
 );
 
-// Debug: intersection points so you can see if geometry is correct
+// Debug circles to confirm exact points
 if (frontI) makeCircle(frontI.x, frontI.y, 6, '#f59e0b', 0.95);
 if (backI)  makeCircle(backI.x,  backI.y,  6, '#f59e0b', 0.95);
 
 if (!frontI || !backI) {
-  // If this triggers, your side seams might not intersect the LW segment (or segments are not where we think).
-  console.warn('Side seam darts: intersection failed. frontI/backI:', frontI, backI);
+  console.warn('SIDE DARTS: intersection failed. frontI/backI:', frontI, backI);
 } else {
-  // 3) moved apex
-  const frontShiftPx = frontSideIntakeInches * scaleFactor;
-  const backShiftPx  = backSideIntakeInches  * scaleFactor;
-
-  // Keep your “front vs back opposite directions” requirement:
-  // Front apex -> move LEFT, Back apex -> move RIGHT
+  // ---------- 3) Apex points: opposite directions ----------
+  // Requirement: front and back dart apex move in opposite directions
   const frontApex = { x: frontI.x + frontShiftPx, y: frontI.y };
-const backApex  = { x: backI.x - backShiftPx,  y: backI.y };
+  const backApex  = { x: backI.x - backShiftPx,  y: backI.y };
 
-  // Debug: apex points
+  // Debug circles at apex
   makeCircle(frontApex.x, frontApex.y, 5, '#dc2626', 0.9);
   makeCircle(backApex.x,  backApex.y,  5, '#9333ea', 0.9);
 
-  // 4) base width: keep it small so lines are visible and not degenerate
-  // (earlier baseHalfPx could be too big and dart lines could disappear due to overlap/outside view)
-  const baseHalfPx = Math.max(6, 0.08 * scaleFactor); // ~ small constant visual width 
+  // ---------- 4) Base spread: proportional to apex offset (so visible/consistent) ----------
+  // You can tweak 0.25 if you want darts wider/narrower at the base.
+  const baseHalfPxFront = Math.max(4, 0.25 * frontShiftPx);
+  const baseHalfPxBack  = Math.max(4, 0.25 * backShiftPx);
 
-  const frontBase1 = { x: frontI.x - baseHalfPx, y: frontI.y };
-  const frontBase2 = { x: frontI.x + baseHalfPx, y: frontI.y };
+  const frontBase1 = { x: frontI.x - baseHalfPxFront, y: frontI.y };
+  const frontBase2 = { x: frontI.x + baseHalfPxFront, y: frontI.y };
 
-  const backBase1 = { x: backI.x - baseHalfPx, y: backI.y };
-  const backBase2 = { x: backI.x + baseHalfPx, y: backI.y };
+  const backBase1  = { x: backI.x - baseHalfPxBack,  y: backI.y };
+  const backBase2  = { x: backI.x + baseHalfPxBack,  y: backI.y };
 
   const sideColor = '#f59e0b';
 
-  // Draw 2 legs for each side
+  // ---------- 5) Draw the two dart legs for each side ----------
   drawLeg(frontApex.x, frontApex.y, frontBase1.x, frontBase1.y, sideColor);
   drawLeg(frontApex.x, frontApex.y, frontBase2.x, frontBase2.y, sideColor);
 
   drawLeg(backApex.x, backApex.y, backBase1.x, backBase1.y, sideColor);
   drawLeg(backApex.x, backApex.y, backBase2.x, backBase2.y, sideColor);
 }
-
-
 
            
             // --- 2. SLEEVE BLOCK ---
