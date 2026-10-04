@@ -2353,9 +2353,7 @@ appendLabel(
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
 // Uses your Step 28 trueBustLineY and bustLineY for dart termination rules.
 
-//
 // 1) LW endpoints (from STEP 29)
-//
 const LW_X1 = cbWaistIntersectionX;
 const LW_Y1 = cbWaistIntersectionY;
 const LW_X2 = pointLW_X;
@@ -2425,55 +2423,50 @@ function readNumber(id, fallback) {
   return Number.isFinite(v) ? v : fallback;
 }
 
-//
 // 2) Dart TOP termination rules (from your Step 28)
-//
 const frontTopTipY = trueBustLineY + (1.0 * scaleFactor); // 1" below True Bust Line
 
-// For back, choose offset below upper Bust Line
 const backTopTipOffsetInches = 1.75;
 const backTopTipY = bustLineY + (backTopTipOffsetInches * scaleFactor);
 
-//
-// 3) Lower dart apices (UPDATED)
-// Lower dart tip Y = hipLineY - (2.0 * scaleFactor)
+// 3) Lower dart apices
 const dartBottomTipY = hipLineY - (2.0 * scaleFactor);
-
 const frontBottomApexY = dartBottomTipY;
 const backBottomApexY  = dartBottomTipY;
 
-//
-// 4) Compute total waist excess for DARTS (UPDATED: Professional absolute half bust-waist method)
-// IMPORTANT: This replaces the previous pattern-intersection based excess.
-// excess = abs(halfBust - halfWaist)  (FULL-circumference inputs, but compare halves)
-// Then you keep your existing split:
-//   - verticalDartTotalIntake = totalWaistExcess * 0.68
-//   - side intake implicitly = totalWaistExcess * 0.32 (not drawn in this snippet)
-//
-// 4a) read measures
+// 4) Total waist excess
 const bustFull  = readNumber('bust', 0);   // FULL circumference
 const waistFull = readNumber('waist', 0);  // FULL circumference
-
-// 4b) half measures
 const halfBust  = bustFull / 2;
 const halfWaist = waistFull / 2;
 
-// 4c) total excess (TOTAL, inches, net)
-const totalWaistExcess = Math.abs(halfBust - halfWaist); // inches
+const totalWaistExcess = Math.abs(halfBust - halfWaist); // inches (FULL circumference)
 
-// Optional (but helps debug if you later add side shaping in another step)
-const sideTotalIntake = totalWaistExcess * 0.32;
-const dartsTotalIntakeCheck = totalWaistExcess * 0.68;
-
-console.log('halfBust', halfBust);
-console.log('halfWaist', halfWaist);
-console.log('totalWaistExcess (ABS halfBust-halfWaist)', totalWaistExcess);
-console.log('sideTotalIntake (implied)', sideTotalIntake);
-console.log('dartsTotalIntakeCheck (for vertical darts)', dartsTotalIntakeCheck);
-
+// --------------------------------------------------------------------
+// UPDATED RATIOS (follow your rule):
+// Side seams: ~30-35% of total excess, divided equally front/back side seams
+// Back darts: ~40-45% of total excess (hug spine)
+// Front darts: ~25-30% of total excess
 //
-// 5) Distribution + drawing (keep your existing logic unchanged)
-//
+// Implementation approach (clean + non-overlapping):
+// 1) Take sideRatio of total excess for side seams (both sides combined)
+// 2) Remaining excess goes to back/front darts in a way that matches the target totals
+//    Example choice: sideRatio = 0.32 (within 30-35%)
+//    Remaining = 0.68
+//    Choose backFractionOfRemaining = 0.65 -> back = 0.65*0.68 = 0.442 (44.2% of total)
+//    Front = 0.35*0.68 = 0.238 (23.8% of total)
+// --------------------------------------------------------------------
+const sideRatio = 0.32; // within 0.30~0.35
+
+// Side seam amount split equally front/back side seams:
+const sideTotalIntake = totalWaistExcess * sideRatio; // inches (FULL circumference for both sides)
+const verticalDartTotalIntakeBase = Math.max(0, totalWaistExcess - sideTotalIntake);
+
+// back/front split of remaining to match ~40-45% back and ~25-30% front of total excess
+const backFractionOfRemaining = 0.65; // => ~44.2% of total when sideRatio=0.32
+const frontFractionOfRemaining = 1 - backFractionOfRemaining;
+
+// 5) Distribution + drawing (location/length logic unchanged)
 const separationPx = 0.35 * scaleFactor;
 
 const frontDouble = document.getElementById('doubleDartFront')?.checked;
@@ -2490,12 +2483,10 @@ const backWidthInchesTotal =
 
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
-//
-// Intake rule
-// (kept exactly as your code; only excess calc was updated to your requested method)
-const verticalDartTotalIntake = totalWaistExcess * 0.68;
-const backDartTotalIntake  = verticalDartTotalIntake * 0.55;
-const frontDartTotalIntake = verticalDartTotalIntake * 0.45;
+// vertical dart totals after side intake
+const verticalDartTotalIntake = verticalDartTotalIntakeBase;
+const backDartTotalIntake  = verticalDartTotalIntake * backFractionOfRemaining;
+const frontDartTotalIntake = verticalDartTotalIntake * frontFractionOfRemaining;
 
 let frontInnerWidth = 0, frontOuterWidth = 0;
 let backInnerWidth = 0, backOuterWidth = 0;
@@ -2516,9 +2507,7 @@ if (backDouble) {
   backOuterWidth = 0;
 }
 
-//
 // FRONT darts (TOP + LOWER)
-//
 if (frontDouble) {
   if (frontInnerWidth > 0) {
     const baseX = frontBaseReferenceX - separationPx;
@@ -2545,9 +2534,7 @@ if (frontDouble) {
   drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
 }
 
-//
 // BACK darts (TOP + LOWER)
-//
 if (backDouble) {
   if (backInnerWidth > 0) {
     const baseX = backBaseReferenceX - separationPx;
@@ -2573,6 +2560,7 @@ if (backDouble) {
   drawWaistDartLocal(baseX, baseY, halfW, backTopTipY, '#9333ea');
   drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
 }
+
            
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
