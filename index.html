@@ -2443,30 +2443,36 @@ const frontBottomApexY = dartBottomTipY;
 const backBottomApexY  = dartBottomTipY;
 
 //
-// 4) Compute total waist excess for DARTS (CORRECTED: NO ease in darts)
-// IMPORTANT: "waist" input is FULL circumference, while pattern width (CF- CB) is also FULL width.
-// Therefore compare FULL width to FULL circumference, and do not include waistEase here.
+// 4) Compute total waist excess for DARTS (UPDATED: Professional absolute half bust-waist method)
+// IMPORTANT: This replaces the previous pattern-intersection based excess.
+// excess = abs(halfBust - halfWaist)  (FULL-circumference inputs, but compare halves)
+// Then you keep your existing split:
+//   - verticalDartTotalIntake = totalWaistExcess * 0.68
+//   - side intake implicitly = totalWaistExcess * 0.32 (not drawn in this snippet)
 //
-const waistInput = readNumber('waist', 0); // FULL circumference (net body), NO ease
-// const waistEase  = readNumber('waistEase', 0); // <-- REMOVE/NOT USED FOR DART EXCESS
+// 4a) read measures
+const bustFull  = readNumber('bust', 0);   // FULL circumference
+const waistFull = readNumber('waist', 0);  // FULL circumference
 
-const drawnBlockWaistWidthPx = cfWaistIntersectionX - cbWaistIntersectionX; // FULL width in px
+// 4b) half measures
+const halfBust  = bustFull / 2;
+const halfWaist = waistFull / 2;
 
-// Convert drawn block FULL width back to inches before comparing to waistInput (full circumference inches)
-const drawnBlockWaistFullInches = drawnBlockWaistWidthPx / scaleFactor;
+// 4c) total excess (TOTAL, inches, net)
+const totalWaistExcess = Math.abs(halfBust - halfWaist); // inches
 
-// Dart excess is the extra circumference the pattern currently has at waist.
-// Ease is added later, so darts only use net body waist.
-const totalWaistExcess = Math.max(0, drawnBlockWaistFullInches - waistInput); // inches (FULL circumference)
+// Optional (but helps debug if you later add side shaping in another step)
+const sideTotalIntake = totalWaistExcess * 0.32;
+const dartsTotalIntakeCheck = totalWaistExcess * 0.68;
 
-// Debug (optional)
-console.log('drawnBlockWaistWidthPx', drawnBlockWaistWidthPx);
-console.log('drawnBlockWaistFullInches', drawnBlockWaistFullInches);
-console.log('waistInput (FULL)', waistInput);
-console.log('totalWaistExcess', totalWaistExcess);
+console.log('halfBust', halfBust);
+console.log('halfWaist', halfWaist);
+console.log('totalWaistExcess (ABS halfBust-halfWaist)', totalWaistExcess);
+console.log('sideTotalIntake (implied)', sideTotalIntake);
+console.log('dartsTotalIntakeCheck (for vertical darts)', dartsTotalIntakeCheck;
 
 //
-// 5) Distribution + drawing
+// 5) Distribution + drawing (keep your existing logic unchanged)
 //
 const separationPx = 0.35 * scaleFactor;
 
@@ -2486,7 +2492,7 @@ const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor
 
 //
 // Intake rule
-// (kept exactly as your code; only excess calc was corrected)
+// (kept exactly as your code; only excess calc was updated to your requested method)
 const verticalDartTotalIntake = totalWaistExcess * 0.68;
 const backDartTotalIntake  = verticalDartTotalIntake * 0.55;
 const frontDartTotalIntake = verticalDartTotalIntake * 0.45;
