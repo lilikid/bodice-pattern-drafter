@@ -2644,8 +2644,8 @@ if (!frontI || !backI) {
 
   // Keep your “front vs back opposite directions” requirement:
   // Front apex -> move LEFT, Back apex -> move RIGHT
-  const frontApex = { x: frontI.x - frontShiftPx, y: frontI.y };
-  const backApex  = { x: backI.x + backShiftPx,  y: backI.y };
+  const frontApex = { x: frontI.x + frontShiftPx, y: frontI.y };
+const backApex  = { x: backI.x - backShiftPx,  y: backI.y };
 
   // Debug: apex points
   makeCircle(frontApex.x, frontApex.y, 5, '#dc2626', 0.9);
