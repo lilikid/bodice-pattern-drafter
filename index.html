@@ -2350,18 +2350,227 @@ appendLabel(
 );
 
 
-// ===== SIDE SEAM INTAKE DART (connect LW to side seam) =====
+// --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
+// Uses your Step 28 trueBustLineY and bustLineY for dart termination rules.
 
-// helpers
-function lineIntersection(x1,y1,x2,y2, x3,y3,x4,y4) {
-  const den = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
-  if (Math.abs(den) < 1e-9) return null;
-  const px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / den;
-  const py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / den;
-  return {x:px, y:py};
+//
+// 1) LW endpoints (from STEP 29)
+const LW_X1 = cbWaistIntersectionX;
+const LW_Y1 = cbWaistIntersectionY;
+const LW_X2 = pointLW_X;
+const LW_Y2 = pointLW_Y;
+
+function yOnSegment(x, x1, y1, x2, y2) {
+  if (Math.abs(x2 - x1) < 1e-9) return y1;
+  return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+}
+function lwBaseY_atX(dartX) {
+  return yOnSegment(dartX, LW_X1, LW_Y1, LW_X2, LW_Y2);
 }
 
-function drawLeg(x1,y1, x2,y2, color) {
+function widthToHalfPx(widthInches) {
+  return (widthInches / 2) * scaleFactor;
+}
+
+function drawWaistDartLocal(baseX, baseY, halfWidthPx, apexY, color) {
+  const leftX = baseX - halfWidthPx;
+  const rightX = baseX + halfWidthPx;
+
+  const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg1.setAttribute('x1', leftX);
+  leg1.setAttribute('y1', baseY);
+  leg1.setAttribute('x2', baseX);
+  leg1.setAttribute('y2', apexY);
+  leg1.setAttribute('stroke', color);
+  leg1.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg1);
+
+  const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg2.setAttribute('x1', rightX);
+  leg2.setAttribute('y1', baseY);
+  leg2.setAttribute('x2', baseX);
+  leg2.setAttribute('y2', apexY);
+  leg2.setAttribute('stroke', color);
+  leg2.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg2);
+}
+
+function drawLowerWaistDartLocal(baseX, baseY, halfWidthPx, bottomApexY, color) {
+  const leftX = baseX - halfWidthPx;
+  const rightX = baseX + halfWidthPx;
+
+  const leg1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg1.setAttribute('x1', leftX);
+  leg1.setAttribute('y1', baseY);
+  leg1.setAttribute('x2', baseX);
+  leg1.setAttribute('y2', bottomApexY);
+  leg1.setAttribute('stroke', color);
+  leg1.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg1);
+
+  const leg2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  leg2.setAttribute('x1', rightX);
+  leg2.setAttribute('y1', baseY);
+  leg2.setAttribute('x2', baseX);
+  leg2.setAttribute('y2', bottomApexY);
+  leg2.setAttribute('stroke', color);
+  leg2.setAttribute('stroke-width', '1.5');
+  bodiceGroup.appendChild(leg2);
+}
+
+function readNumber(id, fallback) {
+  const el = document.getElementById(id);
+  const v = el ? parseFloat(el.value) : NaN;
+  return Number.isFinite(v) ? v : fallback;
+}
+
+// 2) Dart TOP termination rules (from your Step 28)
+const frontTopTipY = trueBustLineY + (1.0 * scaleFactor); // 1" below True Bust Line
+
+const backTopTipOffsetInches = 1.75;
+const backTopTipY = bustLineY + (backTopTipOffsetInches * scaleFactor);
+
+// 3) Lower dart apices
+const dartBottomTipY = hipLineY - (2.0 * scaleFactor);
+const frontBottomApexY = dartBottomTipY;
+const backBottomApexY  = dartBottomTipY;
+
+// 4) Total waist excess
+const bustFull  = readNumber('bust', 0);   // FULL circumference
+const waistFull = readNumber('waist', 0);  // FULL circumference
+const halfBust  = bustFull / 2;
+const halfWaist = waistFull / 2;
+
+const totalWaistExcess = Math.abs(halfBust - halfWaist); // inches (FULL circumference)
+
+//
+// --------------------------------------------------------------------
+// Keep your vertical dart distribution logic exactly as-is
+// --------------------------------------------------------------------
+//
+const sideRatio = 0.32; // within 0.30~0.35
+
+// Side seam amount split equally front/back side seams:
+const sideTotalIntake = totalWaistExcess * sideRatio; // inches (FULL circumference for both sides)
+const verticalDartTotalIntakeBase = Math.max(0, totalWaistExcess - sideTotalIntake);
+
+// back/front split of remaining
+const backFractionOfRemaining = 0.65;
+const frontFractionOfRemaining = 1 - backFractionOfRemaining;
+
+// 5) Distribution + drawing (location/length logic unchanged)
+const separationPx = 0.35 * scaleFactor;
+
+const frontDouble = document.getElementById('doubleDartFront')?.checked;
+const backDouble  = document.getElementById('doubleDartBack')?.checked;
+
+const cbAnchorX = 50;
+
+const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
+  ? bustDartGuideLineX
+  : (cbAnchorX - 4 * scaleFactor);
+
+const backWidthInchesTotal =
+  readNumber('backWidth', 14.0) + readNumber('backWidthEase', 0.0);
+
+const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
+
+// vertical dart totals after side intake
+const verticalDartTotalIntake = verticalDartTotalIntakeBase;
+const backDartTotalIntake  = verticalDartTotalIntake * backFractionOfRemaining;
+const frontDartTotalIntake = verticalDartTotalIntake * frontFractionOfRemaining;
+
+let frontInnerWidth = 0, frontOuterWidth = 0;
+let backInnerWidth = 0, backOuterWidth = 0;
+
+if (frontDouble) {
+  frontInnerWidth = frontDartTotalIntake * 0.60;
+  frontOuterWidth = frontDartTotalIntake * 0.40;
+} else {
+  frontInnerWidth = frontDartTotalIntake;
+  frontOuterWidth = 0;
+}
+
+if (backDouble) {
+  backInnerWidth = backDartTotalIntake * 0.50;
+  backOuterWidth = backDartTotalIntake * 0.50;
+} else {
+  backInnerWidth = backDartTotalIntake;
+  backOuterWidth = 0;
+}
+
+// FRONT darts (TOP + LOWER)
+if (frontDouble) {
+  if (frontInnerWidth > 0) {
+    const baseX = frontBaseReferenceX - separationPx;
+    const baseY = lwBaseY_atX(baseX);
+    const halfW = widthToHalfPx(frontInnerWidth);
+
+    drawWaistDartLocal(baseX, baseY, halfW, frontTopTipY, '#e11d48');
+    drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
+  }
+  if (frontOuterWidth > 0) {
+    const baseX = frontBaseReferenceX + separationPx;
+    const baseY = lwBaseY_atX(baseX);
+    const halfW = widthToHalfPx(frontOuterWidth);
+
+    drawWaistDartLocal(baseX, baseY, halfW, frontTopTipY, '#e11d48');
+    drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
+  }
+} else {
+  const baseX = frontBaseReferenceX;
+  const baseY = lwBaseY_atX(baseX);
+  const halfW = widthToHalfPx(frontInnerWidth);
+
+  drawWaistDartLocal(baseX, baseY, halfW, frontTopTipY, '#e11d48');
+  drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
+}
+
+// BACK darts (TOP + LOWER)
+if (backDouble) {
+  if (backInnerWidth > 0) {
+    const baseX = backBaseReferenceX - separationPx;
+    const baseY = lwBaseY_atX(baseX);
+    const halfW = widthToHalfPx(backInnerWidth);
+
+    drawWaistDartLocal(baseX, baseY, halfW, backTopTipY, '#9333ea');
+    drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
+  }
+  if (backOuterWidth > 0) {
+    const baseX = backBaseReferenceX + separationPx;
+    const baseY = lwBaseY_atX(baseX);
+    const halfW = widthToHalfPx(backOuterWidth);
+
+    drawWaistDartLocal(baseX, baseY, halfW, backTopTipY, '#9333ea');
+    drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
+  }
+} else {
+  const baseX = backBaseReferenceX;
+  const baseY = lwBaseY_atX(baseX);
+  const halfW = widthToHalfPx(backInnerWidth);
+
+  drawWaistDartLocal(baseX, baseY, halfW, backTopTipY, '#9333ea');
+  drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
+}
+
+//
+// --------------------------------------------------------------------
+// ADDED: SIDE SEAM INTAKE darts that CONNECT to side seam lines
+// Front side seam:  (frontUnderarmPointX, bustLineY) -> (frontHipPointX, hipLineY)  (STEP 27)
+// Back side seam:   (backUnderarmPointX,  bustLineY) -> (backHipPointX,  hipLineY)  (STEP 13 + STEP 12)
+// --------------------------------------------------------------------
+
+// helpers
+function lineIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+  const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (Math.abs(den) < 1e-9) return null;
+
+  const px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / den;
+  const py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / den;
+  return { x: px, y: py };
+}
+
+function drawSideLeg(x1, y1, x2, y2, color) {
   const leg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   leg.setAttribute('x1', x1);
   leg.setAttribute('y1', y1);
@@ -2372,64 +2581,76 @@ function drawLeg(x1,y1, x2,y2, color) {
   bodiceGroup.appendChild(leg);
 }
 
-// 1) intake distribution: 0.32 total for BOTH sides, split front/back equally => 0.16 each
+// 1) side intake distribution (same ratio as you already used)
+// total side intake = 0.32 * totalWaistExcess, split equally front/back => 0.16 each
 const sideRatioTotal = 0.32;
-const sideRatioPerSide = sideRatioTotal / 2; // 0.16
+const sideRatioPerSide = sideRatioTotal / 2;
 
-const frontSideIntake  = totalWaistExcess * sideRatioPerSide;
-const backSideIntake   = totalWaistExcess * sideRatioPerSide;
+const frontSideIntakeInches = totalWaistExcess * sideRatioPerSide;
+const backSideIntakeInches  = totalWaistExcess * sideRatioPerSide;
 
-// 2) shifts in pixels
-// IMPORTANT: your “move intersection point” should be proportional to intake,
-// so we convert inches -> pixels directly.
-// If it looks too strong/weak, we can multiply by a small factor later.
-const frontShiftPx = frontSideIntake * scaleFactor;
-const backShiftPx  = backSideIntake  * scaleFactor;
+// 2) intersection between LW and each side seam
+const LWline = { x1: LW_X1, y1: LW_Y1, x2: LW_X2, y2: LW_Y2 };
 
-// 3) define LW as a line segment using your LW endpoints
-const LW = { x1: LW_X1, y1: LW_Y1, x2: LW_X2, y2: LW_Y2 };
-
-// 4) define front/back side seam lines using your earlier STEP points
+// Front side seam line segment (from STEP 27 guideline)
 const frontSeam = {
-  x1: frontUnderarmPointX, y1: frontUnderarmPointY,
-  x2: frontHipPointX,      y2: frontHipPointY
+  x1: frontUnderarmPointX,
+  y1: frontUnderarmPointY, // = bustLineY
+  x2: frontHipPointX,
+  y2: frontHipPointY      // = hipLineY
 };
 
+// Back side seam line segment (from STEP 13 backUnderarmToHipLine)
 const backSeam = {
-  x1: backUnderarmPointX, y1: backUnderarmPointY, // = bustLineY in your code
-  x2: backHipPointX,      y2: hipLineY
+  x1: backUnderarmPointX,
+  y1: backUnderarmPointY, // = bustLineY
+  x2: backHipPointX,
+  y2: hipLineY
 };
 
-// 5) intersections of LW with each side seam
-const frontI = lineIntersection(LW.x1,LW.y1,LW.x2,LW.y2, frontSeam.x1,frontSeam.y1, frontSeam.x2,frontSeam.y2);
-const backI  = lineIntersection(LW.x1,LW.y1,LW.x2,LW.y2, backSeam.x1, backSeam.y1, backSeam.x2, backSeam.y2);
+const frontI = lineIntersection(LWline.x1, LWline.y1, LWline.x2, LWline.y2,
+                                 frontSeam.x1, frontSeam.y1, frontSeam.x2, frontSeam.y2);
+
+const backI = lineIntersection(LWline.x1, LWline.y1, LWline.x2, LWline.y2,
+                                backSeam.x1, backSeam.y1, backSeam.x2, backSeam.y2);
 
 if (frontI && backI) {
-  // 6) move apex left/right (your “opposite directions” requirement)
+  // 3) moved apex in opposite directions
+  // Convert intake inches -> pixels.
+  const frontShiftPx = frontSideIntakeInches * scaleFactor;
+  const backShiftPx  = backSideIntakeInches  * scaleFactor;
+
+  // Direction choice:
+  // Front apex: move left
+  // Back apex:  move right
+  // (If you see mirroring, tell me and I will flip signs.)
   const frontApex = { x: frontI.x - frontShiftPx, y: frontI.y };
   const backApex  = { x: backI.x + backShiftPx,  y: backI.y };
 
-  // 7) create two legs by choosing two base points around the seam at that same y
-  // since seam is slanted, the simplest stable visual is: use small x offsets at the same y
-  const baseHalfPx = 0.5 * scaleFactor * sideRatioPerSide; // small “dart width” driver
+  // 4) draw two legs from apex to two base points around the side seam at LW height.
+  // Use a small base half-width proportional to side intake (stable visual).
+  const baseHalfPx = (sideRatioPerSide * totalWaistExcess * 0.5) * scaleFactor;
 
   const frontBase1 = { x: frontI.x - baseHalfPx, y: frontI.y };
   const frontBase2 = { x: frontI.x + baseHalfPx, y: frontI.y };
 
-  const backBase1  = { x: backI.x - baseHalfPx, y: backI.y };
-  const backBase2  = { x: backI.x + baseHalfPx, y: backI.y };
+  const backBase1  = { x: backI.x - baseHalfPx,  y: backI.y };
+  const backBase2  = { x: backI.x + baseHalfPx,  y: backI.y };
 
-  const dartColor = '#f59e0b';
+  const sideColor = '#f59e0b'; // orange
 
-  // draw two legs per side seam intake dart
-  drawLeg(frontApex.x, frontApex.y, frontBase1.x, frontBase1.y, dartColor);
-  drawLeg(frontApex.x, frontApex.y, frontBase2.x, frontBase2.y, dartColor);
+  // Front side intake dart legs
+  drawSideLeg(frontApex.x, frontApex.y, frontBase1.x, frontBase1.y, sideColor);
+  drawSideLeg(frontApex.x, frontApex.y, frontBase2.x, frontBase2.y, sideColor);
 
-  drawLeg(backApex.x,  backApex.y,  backBase1.x,  backBase1.y,  dartColor);
-  drawLeg(backApex.x,  backApex.y,  backBase2.x,  backBase2.y,  dartColor);
+  // Back side intake dart legs
+  drawSideLeg(backApex.x,  backApex.y,  backBase1.x,  backBase1.y,  sideColor);
+  drawSideLeg(backApex.x,  backApex.y,  backBase2.x,  backBase2.y,  sideColor);
+
 } else {
-  console.warn('LW does not intersect front/back side seam lines as expected.');
+  console.warn('Side seam intake dart: LW does not intersect side seams as expected.');
 }
+
 
            
             // --- 2. SLEEVE BLOCK ---
