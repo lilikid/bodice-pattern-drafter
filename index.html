@@ -2346,12 +2346,28 @@ appendLabel(
   false
 );
 
-// --------------------
-// DF1/DF2/DB1/DB2 reference points (LOWER WAIST LINE)
-// Collision-safe: use unique variable names
-// --------------------
+// Helper: intersection of vertical line x=x0 with segment (x1,y1)->(x2,y2)
+function intersectVerticalWithSegment_Simple(x0, x1, y1, x2, y2) {
+  const dx = (x2 - x1);
+  if (Math.abs(dx) < 1e-9) return null;
 
-// DF1 intersection of vertical through pointXX with LOWER WAIST LINE segment
+  const t = (x0 - x1) / dx;
+  if (t < -1e-6 || t > 1 + 1e-6) return null;
+
+  const y = y1 + t * (y2 - y1);
+  return { x: x0, y };
+}
+// Lower Waist Line segment endpoints (must exist from your prior steps)
+const lwX1 = cbWaistIntersectionX;
+const lwY1 = cbWaistIntersectionY;
+const lwX2 = pointLW_X;
+const lwY2 = pointLW_Y;
+
+// spacing
+const doubleDartOffsetInches = 1.375;
+const doubleDartOffsetPx = doubleDartOffsetInches * scaleFactor;
+
+// DF1
 let __df1Inter = intersectVerticalWithSegment_Simple(
   pointXX,
   lwX1, lwY1,
@@ -2367,11 +2383,9 @@ if (__df1Inter) {
     '#f59e0b',
     true
   );
-} else {
-  console.warn('DF1 intersection failed (pointXX not crossing Lower Waist Line segment).');
 }
 
-// DF2 only if doubleDartFront
+// DF2
 if (document.getElementById('doubleDartFront').checked && __df1Inter) {
   const __df2XGuess = __df1Inter.x + doubleDartOffsetPx;
 
@@ -2390,13 +2404,11 @@ if (document.getElementById('doubleDartFront').checked && __df1Inter) {
       '#d97706',
       false
     );
-  } else {
-    console.warn('DF2 intersection failed (df2X out of Lower Waist Line segment range).');
   }
 }
 
-// DB1 intersection of vertical at backWidth/4 from CB with LOWER WAIST LINE segment
-const __rawBackWidthLocal = parseFloat(document.getElementById('backWidth').value) || 14.0;
+// DB1
+const rawBackWidthLocal = parseFloat(document.getElementById('backWidth').value) || 14.0;
 const __db1XGuess = 50 + ((__rawBackWidthLocal / 4.0) * scaleFactor);
 
 let __db1Inter = intersectVerticalWithSegment_Simple(
@@ -2414,11 +2426,9 @@ if (__db1Inter) {
     '#8b5cf6',
     false
   );
-} else {
-  console.warn('DB1 intersection failed (db1X out of Lower Waist Line segment range).');
 }
 
-// DB2 only if doubleDartBack
+// DB2
 if (document.getElementById('doubleDartBack').checked && __db1Inter) {
   const __db2XGuess = __db1Inter.x + doubleDartOffsetPx;
 
@@ -2437,8 +2447,6 @@ if (document.getElementById('doubleDartBack').checked && __db1Inter) {
       '#6d28d9',
       false
     );
-  } else {
-    console.warn('DB2 intersection failed (db2X out of Lower Waist Line segment range).');
   }
 }
 
