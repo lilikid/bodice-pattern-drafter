@@ -2347,7 +2347,7 @@ appendLabel(
 );
 
 // ==============================
-// STEP 30 (continued): Name reference dart points DF1/DF2/DB1/DB2
+// STEP 30 (continued): DF1/DF2/DB1/DB2 on the LOWER WAIST LINE
 // ==============================
 
 // Helper to place a labeled point with click-to-hide/show label
@@ -2362,30 +2362,31 @@ function addNamedPoint(group, name, x, y, color, r = 5.5, labelOffsetX = 12, lab
   appendLabel(group, name, x + labelOffsetX, y + labelOffsetY, color, '11', 'bold', false);
 }
 
-// Helper: intersection of a vertical line x = X0 with a segment A(x1,y1)->B(x2,y2)
+// Helper: intersection of a vertical line x = x0 with a segment A(x1,y1)->B(x2,y2)
 function intersectVerticalWithSegment(x0, x1, y1, x2, y2) {
   const dx = (x2 - x1);
-  if (Math.abs(dx) < 1e-9) return null; // vertical segment; not expected here
+  if (Math.abs(dx) < 1e-9) return null;
 
   const t = (x0 - x1) / dx;
-  if (t < -1e-6 || t > 1 + 1e-6) return null; // outside segment
+  if (t < -1e-6 || t > 1 + 1e-6) return null;
 
   const y = y1 + t * (y2 - y1);
   return { x: x0, y };
 }
 
 // ------------------------------
-// Shared offsets for double darts: 1.25" to 1.5"
-const doubleDartOffsetInches = 1.375; // choose midpoint; tweak if you want
-const doubleDartOffsetPx = doubleDartOffsetInches * scaleFactor;
-
-// ------------------------------
-// DF1: intersection of vertical line at pointXX with LOWER WAIST LINE (CB@waistLineY -> Point LW)
+// LOWER WAIST LINE segment definition (CB@waistLineY -> PointLW@pointLW_Y)
 const lowerWaistSeg = {
   x1: cbWaistIntersectionX, y1: cbWaistIntersectionY,
   x2: pointLW_X,            y2: pointLW_Y
 };
 
+// Double-dart spacing (1.25"–1.5"), using midpoint default
+const doubleDartOffsetInches = 1.375; // tweak if you want
+const doubleDartOffsetPx = doubleDartOffsetInches * scaleFactor;
+
+// ------------------------------
+// DF1: intersection of vertical(x=pointXX) with LOWER WAIST LINE
 const df1I = intersectVerticalWithSegment(
   pointXX,
   lowerWaistSeg.x1, lowerWaistSeg.y1,
@@ -2393,42 +2394,95 @@ const df1I = intersectVerticalWithSegment(
 );
 
 if (df1I) {
-  addNamedPoint(bodiceGroup, 'DF1 (Inner Front Dart Center Ref)', df1I.x, df1I.y, '#f59e0b', 5.5, 14, 18);
+  // Move DF1 label a bit UP to avoid overlapping with Point LW
+  addNamedPoint(
+    bodiceGroup,
+    'DF1 (Inner Front Dart Center Ref)',
+    df1I.x, df1I.y,
+    '#f59e0b',
+    5.5,
+    14,
+    -26 // <<< was -18/-10 earlier; more negative = label goes up
+  );
 } else {
   console.warn('DF1 intersection failed');
 }
 
-// DF2: only if Double Front Dart checkbox clicked.
-// Place along waistline (y = waistLineY), shifted toward side seam from DF1 by 1.25"–1.5".
+// ------------------------------
+// DF2 only if Double Front Dart checked; place on LOWER WAIST LINE too
 const doubleFrontChecked = document.getElementById('doubleDartFront').checked;
 
 if (doubleFrontChecked && df1I) {
-  const df2X = df1I.x + doubleDartOffsetPx; // toward side seam (right side in your layout)
-  const df2Y = waistLineY;               // explicitly on waistline
+  const df2X = df1I.x + doubleDartOffsetPx; // toward side seam
+  const df2I = intersectVerticalWithSegment(
+    df2X,
+    lowerWaistSeg.x1, lowerWaistSeg.y1,
+    lowerWaistSeg.x2, lowerWaistSeg.y2
+  );
 
-  addNamedPoint(bodiceGroup, 'DF2 (Outer Front Dart Center)', df2X, df2Y, '#d97706', 5.5, 14, 18);
+  if (df2I) {
+    addNamedPoint(
+      bodiceGroup,
+      'DF2 (Outer Front Dart Center)',
+      df2I.x, df2I.y,
+      '#d97706',
+      5.5,
+      14,
+      -18
+    );
+  }
 }
 
 // ------------------------------
-// Back dart reference:
-// DB1 placed at Back width input / 4 away from Center Back line (x=50).
-rawBackWidth = parseFloat(document.getElementById('backWidth').value) || 14.0;
+// DB1 and DB2: must locate on the LOWER WAIST LINE
+const rawBackWidth = parseFloat(document.getElementById('backWidth').value) || 14.0;
+
+// DB1 measured backWidth/4 away from Center Back line (x=50)
 const db1X = 50 + ((rawBackWidth / 4.0) * scaleFactor);
-const db1Y = waistLineY;
 
-// Always draw DB1 (inner back dart center ref)
-addNamedPoint(bodiceGroup, 'DB1 (Inner Back Dart Center Ref)', db1X, db1Y, '#8b5cf6', 5.5, 14, 18);
+// intersect DB1 vertical with LOWER WAIST LINE
+const db1I = intersectVerticalWithSegment(
+  db1X,
+  lowerWaistSeg.x1, lowerWaistSeg.y1,
+  lowerWaistSeg.x2, lowerWaistSeg.y2
+);
 
-// DB2 only if Double Back Dart checkbox clicked.
-// Outer Back Dart Center spaced 1.25"–1.5" from DB1 toward side seam.
+if (db1I) {
+  addNamedPoint(
+    bodiceGroup,
+    'DB1 (Inner Back Dart Center Ref)',
+    db1I.x, db1I.y,
+    '#8b5cf6',
+    5.5,
+    14,
+    -18
+  );
+}
+
+// DB2 only if Double Back Dart checked
 const doubleBackChecked = document.getElementById('doubleDartBack').checked;
 
-if (doubleBackChecked) {
-  const db2X = db1X + doubleDartOffsetPx; // toward side seam (right)
-  const db2Y = waistLineY;
+if (doubleBackChecked && db1I) {
+  const db2X = db1I.x + doubleDartOffsetPx; // toward side seam
+  const db2I = intersectVerticalWithSegment(
+    db2X,
+    lowerWaistSeg.x1, lowerWaistSeg.y1,
+    lowerWaistSeg.x2, lowerWaistSeg.y2
+  );
 
-  addNamedPoint(bodiceGroup, 'DB2 (Outer Back Dart Center)', db2X, db2Y, '#6d28d9', 5.5, 14, 18);
+  if (db2I) {
+    addNamedPoint(
+      bodiceGroup,
+      'DB2 (Outer Back Dart Center)',
+      db2I.x, db2I.y,
+      '#6d28d9',
+      5.5,
+      14,
+      -18
+    );
+  }
 }
+
 
 
             // --- 2. SLEEVE BLOCK ---
