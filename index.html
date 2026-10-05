@@ -2680,7 +2680,37 @@ if (!frontI || !backI) {
   drawLeg(backApex.x, backApex.y, backBase2.x, backBase2.y, sideColor);
 }
 
-           
+ // ==============================
+// STEP 32: Side seam curves through intake points
+// Quadratic Bezier curve:
+// start -> (control=intake point) -> end
+// ==============================
+
+// FRONT side seam curve: front underarm -> front intake -> front hip
+const frontSideSeamPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+frontSideSeamPath.setAttribute(
+  'd',
+  `M ${frontUnderarmPointX} ${frontUnderarmPointY} Q ${frontApex.x} ${frontApex.y} ${frontHipPointX} ${frontHipPointY}`
+);
+frontSideSeamPath.setAttribute('stroke', '#0891b2');   // teal-ish like your guides
+frontSideSeamPath.setAttribute('stroke-width', '2.0');
+frontSideSeamPath.setAttribute('fill', 'none');
+bodiceGroup.appendChild(frontSideSeamPath);
+
+// BACK side seam curve: back underarm -> back intake -> back hip
+const backSideSeamPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+backSideSeamPath.setAttribute(
+  'd',
+  `M ${backUnderarmPointX} ${backUnderarmPointY} Q ${backApex.x} ${backApex.y} ${backHipPointX} ${hipLineY}`
+);
+backSideSeamPath.setAttribute('stroke', '#0891b2');
+backSideSeamPath.setAttribute('stroke-width', '2.0');
+backSideSeamPath.setAttribute('fill', 'none');
+bodiceGroup.appendChild(backSideSeamPath);
+
+// (Optional) If you want to visualize the intake points clearly, you can add small circles here.
+// You already draw debug circles at frontI/backI and apex points in Step 31.
+          
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
