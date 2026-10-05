@@ -2651,9 +2651,7 @@ if (!frontI || !backI) {
   console.warn('SIDE DARTS: intersection failed. frontI/backI:', frontI, backI);
 } else {
   // ---------- 3) Apex points: opposite directions ----------
-  // Requirement: front and back dart apex move in opposite directions
-  const frontApex = { x: frontI.x + frontShiftPx, y: frontI.y };
-  const backApex  = { x: backI.x - backShiftPx,  y: backI.y };
+ 
 
   // Debug circles at apex
   makeCircle(frontApex.x, frontApex.y, 5, '#dc2626', 0.9);
