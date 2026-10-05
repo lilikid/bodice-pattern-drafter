@@ -2651,7 +2651,9 @@ if (!frontI || !backI) {
   console.warn('SIDE DARTS: intersection failed. frontI/backI:', frontI, backI);
 } else {
   // ---------- 3) Apex points: opposite directions ----------
- 
+  // Requirement: front and back dart apex move in opposite directions
+  const frontApex = { x: frontI.x + frontShiftPx, y: frontI.y };
+  const backApex  = { x: backI.x - backShiftPx,  y: backI.y };
 
   // Debug circles at apex
   makeCircle(frontApex.x, frontApex.y, 5, '#dc2626', 0.9);
@@ -2679,20 +2681,37 @@ if (!frontI || !backI) {
 }
 
 // ==============================
-// STEP 32: Smooth side seam curves (pass through apex points)
-// Must go through frontApex and backApex (the green-circled LW intake points)
+// STEP 32: Side seam curves must PASS THROUGH dart apex points
+// Uses two cubic segments per side so apex is an actual path endpoint.
 // ==============================
 
-function drawSmoothSideSeamCubic(startX, startY, midX, midY, endX, endY, color) {
-  // Smooth cubic where the control points are placed along the segments
-  const c1x = startX + (midX - startX) * 0.5;
-  const c1y = startY + (midY - startY) * 0.5;
+function drawTwoSegmentCubicThroughMid(sx, sy, mx, my, ex, ey, color) {
+  // Choose control points along the two segment directions
+  // This creates a smooth-looking transition at the mid point.
+  const k = 0.45; // tweak for more/less curvature
 
-  const c2x = midX + (endX - midX) * 0.5;
-  const c2y = midY + (endY - midY) * 0.5;
+  // First segment: start -> mid
+  const c1x = sx + (mx - sx) * k;
+  const c1y = sy + (my - sy) * k;
 
+  // Second segment: mid -> end
+  const c2x = mx + (ex - mx) * k;
+  const c2y = my + (ey - my) * k;
+
+  const cMid1x = mx - (mx - sx) * (k * 0.6);
+  const cMid1y = my - (my - sy) * (k * 0.6);
+
+  const cMid2x = mx + (mx - sx) * (k * 0.6);
+  const cMid2y = my + (my - sy) * (k * 0.6);
+
+  // Build one path with two C segments; mid is an endpoint => guaranteed pass-through.
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', `M ${startX} ${startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${endX} ${endY}`);
+  path.setAttribute(
+    'd',
+    `M ${sx} ${sy} ` +
+    `C ${c1x} ${c1y}, ${cMid1x} ${cMid1y}, ${mx} ${my} ` +
+    `C ${cMid2x} ${cMid2y}, ${c2x} ${c2y}, ${ex} ${ey}`
+  );
   path.setAttribute('stroke', color);
   path.setAttribute('stroke-width', '3');
   path.setAttribute('fill', 'none');
@@ -2700,7 +2719,7 @@ function drawSmoothSideSeamCubic(startX, startY, midX, midY, endX, endY, color) 
 }
 
 // FRONT red seam: underarm -> frontApex -> hip
-drawSmoothSideSeamCubic(
+drawTwoSegmentCubicThroughMid(
   frontUnderarmPointX, frontUnderarmPointY,
   frontApex.x, frontApex.y,
   frontHipPointX, frontHipPointY,
@@ -2708,13 +2727,12 @@ drawSmoothSideSeamCubic(
 );
 
 // BACK red seam: underarm -> backApex -> hip
-drawSmoothSideSeamCubic(
+drawTwoSegmentCubicThroughMid(
   backUnderarmPointX, backUnderarmPointY,
   backApex.x, backApex.y,
   backHipPointX, hipLineY,
   '#dc2626'
 );
-
 
           
             // --- 2. SLEEVE BLOCK ---
