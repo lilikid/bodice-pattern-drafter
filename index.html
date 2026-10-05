@@ -2682,57 +2682,80 @@ if (!frontI || !backI) {
 
 // ==============================
 // STEP 32: Side seam curves must PASS THROUGH dart apex points
-// Uses two cubic segments per side so apex is an actual path endpoint.
+// (Corrected: curve calls moved inside the else block where frontApex/backApex are defined.)
 // ==============================
 
+// Helper: draw a smooth curve using two cubic segments,
+// with the apex point (mx,my) guaranteed to be an endpoint => the path passes through it.
 function drawTwoSegmentCubicThroughMid(sx, sy, mx, my, ex, ey, color) {
-  // Choose control points along the two segment directions
-  // This creates a smooth-looking transition at the mid point.
-  const k = 0.45; // tweak for more/less curvature
+  // Tuning factor for curvature
+  const k = 0.45;
 
-  // First segment: start -> mid
+  // First segment control points (start -> mid)
   const c1x = sx + (mx - sx) * k;
   const c1y = sy + (my - sy) * k;
 
-  // Second segment: mid -> end
+  // Second segment control points (mid -> end)
   const c2x = mx + (ex - mx) * k;
   const c2y = my + (ey - my) * k;
 
+  // Extra shaping around the mid point (still passes through mid because it's endpoint)
   const cMid1x = mx - (mx - sx) * (k * 0.6);
   const cMid1y = my - (my - sy) * (k * 0.6);
 
   const cMid2x = mx + (mx - sx) * (k * 0.6);
   const cMid2y = my + (my - sy) * (k * 0.6);
 
-  // Build one path with two C segments; mid is an endpoint => guaranteed pass-through.
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
   path.setAttribute(
     'd',
     `M ${sx} ${sy} ` +
     `C ${c1x} ${c1y}, ${cMid1x} ${cMid1y}, ${mx} ${my} ` +
     `C ${cMid2x} ${cMid2y}, ${c2x} ${c2y}, ${ex} ${ey}`
   );
+
   path.setAttribute('stroke', color);
   path.setAttribute('stroke-width', '3');
   path.setAttribute('fill', 'none');
+
   bodiceGroup.appendChild(path);
 }
 
-// FRONT red seam: underarm -> frontApex -> hip
-drawTwoSegmentCubicThroughMid(
-  frontUnderarmPointX, frontUnderarmPointY,
-  frontApex.x, frontApex.y,
-  frontHipPointX, frontHipPointY,
-  '#dc2626'
-);
-
-// BACK red seam: underarm -> backApex -> hip
-drawTwoSegmentCubicThroughMid(
-  backUnderarmPointX, backUnderarmPointY,
-  backApex.x, backApex.y,
-  backHipPointX, hipLineY,
-  '#dc2626'
-);
+// ---------- IMPORTANT: the calls below must be placed INSIDE the same else {...} block
+// where frontApex and backApex are defined. ----------
+//
+// So replace your current STEP 32 block with the following structure:
+//
+// (1) keep your function above (already defined)
+// (2) ensure these two draw calls are inside `else { ... }` after frontApex/backApex are computed
+//
+// Example of correct placement:
+//
+// if (!frontI || !backI) {
+//   console.warn(...)
+// } else {
+//   const frontApex = ...
+//   const backApex  = ...
+//
+//   // ... your dart base/leg drawing code ...
+//
+//   // ✅ STEP 32 curves (calls here, inside else)
+//   drawTwoSegmentCubicThroughMid(
+//     frontUnderarmPointX, frontUnderarmPointY,
+//     frontApex.x, frontApex.y,
+//     frontHipPointX, frontHipPointY,
+//     '#dc2626'
+//   );
+//
+//   drawTwoSegmentCubicThroughMid(
+//     backUnderarmPointX, backUnderarmPointY,
+//     backApex.x, backApex.y,
+//     backHipPointX, hipLineY,
+//     '#dc2626'
+//   );
+// }
+// ==============================
 
           
             // --- 2. SLEEVE BLOCK ---
