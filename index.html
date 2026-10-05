@@ -2681,36 +2681,42 @@ if (!frontI || !backI) {
 }
 
 // ==============================
-// STEP 32: Curved side seams through intake points
-// Use intake points = frontI / backI (LW ∩ side seam)
-// Quadratic Bezier: start -> intake(control) -> end
+// STEP 32: Smooth side seam curves (pass through apex points)
+// Must go through frontApex and backApex (the green-circled LW intake points)
 // ==============================
 
-// FRONT: underarm -> front intake(frontI) -> hip
-if (frontI) {
-  const frontSideSeamCurve = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  frontSideSeamCurve.setAttribute(
-    'd',
-    `M ${frontUnderarmPointX} ${frontUnderarmPointY} Q ${frontI.x} ${frontI.y} ${frontHipPointX} ${frontHipPointY}`
-  );
-  frontSideSeamCurve.setAttribute('stroke', '#dc2626'); // bold red like your draw
-  frontSideSeamCurve.setAttribute('stroke-width', '3');
-  frontSideSeamCurve.setAttribute('fill', 'none');
-  bodiceGroup.appendChild(frontSideSeamCurve);
+function drawSmoothSideSeamCubic(startX, startY, midX, midY, endX, endY, color) {
+  // Smooth cubic where the control points are placed along the segments
+  const c1x = startX + (midX - startX) * 0.5;
+  const c1y = startY + (midY - startY) * 0.5;
+
+  const c2x = midX + (endX - midX) * 0.5;
+  const c2y = midY + (endY - midY) * 0.5;
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', `M ${startX} ${startY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${endX} ${endY}`);
+  path.setAttribute('stroke', color);
+  path.setAttribute('stroke-width', '3');
+  path.setAttribute('fill', 'none');
+  bodiceGroup.appendChild(path);
 }
 
-// BACK: underarm -> back intake(backI) -> hip
-if (backI) {
-  const backSideSeamCurve = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  backSideSeamCurve.setAttribute(
-    'd',
-    `M ${backUnderarmPointX} ${backUnderarmPointY} Q ${backI.x} ${backI.y} ${backHipPointX} ${hipLineY}`
-  );
-  backSideSeamCurve.setAttribute('stroke', '#dc2626');
-  backSideSeamCurve.setAttribute('stroke-width', '3');
-  backSideSeamCurve.setAttribute('fill', 'none');
-  bodiceGroup.appendChild(backSideSeamCurve);
-}
+// FRONT red seam: underarm -> frontApex -> hip
+drawSmoothSideSeamCubic(
+  frontUnderarmPointX, frontUnderarmPointY,
+  frontApex.x, frontApex.y,
+  frontHipPointX, frontHipPointY,
+  '#dc2626'
+);
+
+// BACK red seam: underarm -> backApex -> hip
+drawSmoothSideSeamCubic(
+  backUnderarmPointX, backUnderarmPointY,
+  backApex.x, backApex.y,
+  backHipPointX, hipLineY,
+  '#dc2626'
+);
+
 
           
             // --- 2. SLEEVE BLOCK ---
