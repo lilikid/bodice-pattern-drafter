@@ -2453,18 +2453,18 @@ const frontBottomApexY = bottomApexY;
 const backBottomApexY  = bottomApexY;
 
 // =====================
-// 4) Compute total waist excess + distribution (your existing Step 31 logic)
+// 4) Compute total waist excess (HALF-body) + distribution
 // =====================
 const waistInput = readNumber('waist', 0);
 const waistEase  = readNumber('waistEase', 0);
 const totalWaistTarget = waistInput + waistEase;
 
-// Width of the drawn bodice waist line between CF and CB (in pixels)
-const drawnBlockWaistWidthPx = cfWaistIntersectionX - cbWaistIntersectionX;
+// totalBust should already be defined earlier in your generatePattern() as:
+// const totalBust = bust + bustEase;
 
-// Excess (in inches)
-const excessPx = Math.max(0, drawnBlockWaistWidthPx - (totalWaistTarget * scaleFactor));
-const totalWaistExcess = excessPx / scaleFactor; // inches
+// We draw front+back combined but only HALF the body,
+// so the total waist intake to remove via darts is HALF the circumference:
+const totalWaistExcess = Math.max(0, (totalBust - totalWaistTarget) / 2); // inches
 
 const separationPx = 0.35 * scaleFactor;
 
@@ -2481,10 +2481,10 @@ const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
 const backWidthInchesTotal =
   readNumber('backWidth', 14.0) + readNumber('backWidthEase', 0.0);
 
-// Back base reference uses 1/4 of back width
+// Back base reference uses 1/4 of back width (kept)
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
-// Intake rule distribution (kept from your prior code)
+// Intake rule distribution (same proportions as before)
 const verticalDartTotalIntake = totalWaistExcess * 0.68;
 const backDartTotalIntake  = verticalDartTotalIntake * 0.55;
 const frontDartTotalIntake = verticalDartTotalIntake * 0.45;
@@ -2507,6 +2507,7 @@ if (backDouble) {
   backInnerWidth = backDartTotalIntake;
   backOuterWidth = 0;
 }
+
 
 // =====================
 // 5) Draw darts (TOP + LOWER)
