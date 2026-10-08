@@ -2350,8 +2350,42 @@ appendLabel(
 );
 
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
-// Uses your Step 28 trueBustLineY and bustLineY for dart termination rules,
-// and your Step 29 hipLineY/pointXY (apex X / true bust point) logic for lower tips.
+// Requirements implemented:
+// 1) Double front darts:
+//    - INNER dart center aligns with the vertical drop from Point X (true bust point) -> use pointXX
+//    - FRONT double dart center-to-center spacing = 1.25" to 1.5" (default 1.375")
+//    - Proportional intake split = ~60% inner / 40% outer
+//
+// 2) Double back darts:
+//    - INNER back dart center uses your baseRefX (backBaseReferenceX) if provided, otherwise fallback to a safe value.
+//    - BACK double dart center-to-center spacing = 1.25" to 1.5" (default 1.375")
+//    - Proportional intake split = ~50% inner / 50% outer
+//
+// 3) Keeps your existing LENGTH/apex logic ONLY updates how WIDTH + separation are applied.
+//
+const frontDouble = document.getElementById('doubleDartFront')?.checked;
+const backDouble  = document.getElementById('doubleDartBack')?.checked;
+
+// =====================
+// 0) Fetch/ensure core geometry vars exist
+// =====================
+const safeScale = Number.isFinite(scaleFactor) ? scaleFactor : 1;
+
+const clamp = (x, a, b) => {
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  return Math.max(lo, Math.min(hi, x));
+};
+
+function yOnSegment(x, x1, y1, x2, y2) {
+  if (Math.abs(x2 - x1) < 1e-9) return y1;
+  return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+}
+
+function widthToHalfPx(widthInches) {
+  // dart intake width is the full intake; drawing uses half-width to left/right legs
+  return (widthInches / 2) * safeScale;
+}
 
 // =====================
 // 1) LW endpoints (from STEP 29)
@@ -2361,55 +2395,33 @@ const LW_Y1 = cbWaistIntersectionY;
 const LW_X2 = pointLW_X;
 const LW_Y2 = pointLW_Y;
 
-function yOnSegment(x, x1, y1, x2, y2) {
-  if (Math.abs(x2 - x1) < 1e-9) return y1;
-  return y1 + (y2 - y1) * (x - x1) / (x2 - x1);
-}
-function widthToHalfPx(widthInches) {
-  return (widthInches / 2) * scaleFactor;
-}
-
-function clamp(x, a, b) {
-  const lo = Math.min(a, b);
-  const hi = Math.max(a, b);
-  return Math.max(lo, Math.min(hi, x));
-}
-
 const LW_MIN_X = Math.min(LW_X1, LW_X2);
 const LW_MAX_X = Math.max(LW_X1, LW_X2);
 
+// If separation pushes anchors outside the LW span, clamp them onto LW segment.
 function safeClampedBaseYAtX(x) {
-  // Important: double-dart baseX offsets (±separationPx) can land outside LW span.
-  // Clamp so doubles always anchor within the same LW segment as single.
   const clampedX = clamp(x, LW_MIN_X, LW_MAX_X);
   const y = yOnSegment(clampedX, LW_X1, LW_Y1, LW_X2, LW_Y2);
   return Number.isFinite(y) ? { baseX: clampedX, baseY: y } : null;
 }
 
 // =====================
-// 2) Dart TOP termination rules (match your clarification)
+// 2) Dart TOP termination rules (match your earlier rules)
 // =====================
-// FRONT: top tip = 1" below True Bust Line (trueBustLineY + 1.0")
-const frontTopTipY = trueBustLineY + (1.0 * scaleFactor);
+const frontTopTipY = trueBustLineY + (1.0 * safeScale);
 
-// BACK: top tip = 1.5" to 2.0" below Bust Line (use 1.75" default; change if you want)
-const backTopTipOffsetInches = 1.75; // allowed range: 1.5 .. 2.0
-const backTopTipY = bustLineY + (backTopTipOffsetInches * scaleFactor);
+const backTopTipOffsetInches = 1.75; // 1.5 .. 2.0
+const backTopTipY = bustLineY + (backTopTipOffsetInches * safeScale);
 
 // =====================
-// 3) Dart BOTTOM apex rules (below apex X point)
+// 3) Dart bottom apex rules (same as your earlier logic)
 // =====================
-// Your apex X / True Bust Point is pointXY (set in Step 28).
-// We keep the bottom tip using the earlier "Hip Line - 2"" idea,
-// but enforce it is ALWAYS below the apex X point.
-const bottomOffsetInchesFromHip = 2.0; // earlier logic: hipLineY - 2"
-const bottomApexCandidateY = hipLineY - (bottomOffsetInchesFromHip * scaleFactor);
+const bottomOffsetInchesFromHip = 2.0;
+const bottomApexCandidateY = hipLineY - (bottomOffsetInchesFromHip * safeScale);
 
-// Safety: must be below apex X (pointXY)
-const minBelowApexPx = 0.25 * scaleFactor; // small gap so lines don't visually collide
+const minBelowApexPx = 0.25 * safeScale;
 const bottomApexY = Math.max(bottomApexCandidateY, pointXY + minBelowApexPx);
 
-// Define both front/back bottom apices (same rule; split later if you want different)
 const frontBottomApexY = bottomApexY;
 const backBottomApexY  = bottomApexY;
 
@@ -2463,116 +2475,146 @@ function drawLowerWaistDartLocal(baseX, baseY, halfWidthPx, bottomApexY, color) 
 }
 
 // =====================
-// 5) Draw darts (TOP + LOWER)
+// 5) Dart layout engine (center-aligned with your professional spacing rules)
+//    We DO NOT use the previous separationPx inner/outer approach.
+//    Instead we set:
+//    - inner center X = anchorInnerCenterX
+//    - outer center X = anchorInnerCenterX + spacingBetweenCentersPx
 // =====================
-function drawFrontOrBackDarts({
+function drawDoubleFrontOrBackDarts({
   isDouble,
-  inner,
-  outer,
-  baseRefX,
   color,
+  anchorInnerCenterX,   // INNER dart center must align here
   tipTopY,
   apexBottomY,
+  innerWidthInches,     // full dart intake width (not half)
+  outerWidthInches,     // full dart intake width (not half)
+  spacingBetweenCentersInches, // center-to-center spacing
 }) {
-  if (!isFinite(baseRefX)) return;
+  if (!isDouble) return;
 
-  // Start with your intended separation, but back off if baseY fails.
-  let sep = separationPx;
-  const minSep = 0.05 * scaleFactor; // small but > 0
-  const sepStep = 0.7; // reduce gradually
+  const spacingBetweenCentersPx = spacingBetweenCentersInches * safeScale;
 
-  if (isDouble) {
-    // INNER
-    if (inner > 0) {
-      let baseX = baseRefX - sep;
-      let res = safeClampedBaseYAtX(baseX);
-      let baseY = res ? res.baseY : null;
-      let clampedBaseX = res ? res.baseX : baseX;
+  const innerCenterX = anchorInnerCenterX;
+  const outerCenterX = anchorInnerCenterX + spacingBetweenCentersPx;
 
-      while (baseY === null && sep > minSep) {
-        sep *= sepStep;
-        baseX = baseRefX - sep;
-        res = safeClampedBaseYAtX(baseX);
-        baseY = res ? res.baseY : null;
-        clampedBaseX = res ? res.baseX : baseX;
-      }
+  // Place onto LW segment safely
+  const innerRes = safeClampedBaseYAtX(innerCenterX);
+  const outerRes = safeClampedBaseYAtX(outerCenterX);
+  if (!innerRes || !outerRes) return;
 
-      if (baseY !== null) {
-        const halfW = widthToHalfPx(inner);
-        if (Number.isFinite(halfW) && halfW > 0) {
-          drawWaistDartLocal(clampedBaseX, baseY, halfW, tipTopY, color);
-          drawLowerWaistDartLocal(clampedBaseX, baseY, halfW, apexBottomY, color);
-        }
-      }
-    }
+  const halfInnerW = widthToHalfPx(innerWidthInches);
+  const halfOuterW = widthToHalfPx(outerWidthInches);
 
-    // OUTER
-    // reset sep so outer tries the original separation again (more symmetric)
-    sep = separationPx;
+  if (Number.isFinite(halfInnerW) && halfInnerW > 0) {
+    drawWaistDartLocal(innerRes.baseX, innerRes.baseY, halfInnerW, tipTopY, color);
+    drawLowerWaistDartLocal(innerRes.baseX, innerRes.baseY, halfInnerW, apexBottomY, color);
+  }
 
-    if (outer > 0) {
-      let baseX = baseRefX + sep;
-      let res = safeClampedBaseYAtX(baseX);
-      let baseY = res ? res.baseY : null;
-      let clampedBaseX = res ? res.baseX : baseX;
-
-      while (baseY === null && sep > minSep) {
-        sep *= sepStep;
-        baseX = baseRefX + sep;
-        res = safeClampedBaseYAtX(baseX);
-        baseY = res ? res.baseY : null;
-        clampedBaseX = res ? res.baseX : baseX;
-      }
-
-      if (baseY !== null) {
-        const halfW = widthToHalfPx(outer);
-        if (Number.isFinite(halfW) && halfW > 0) {
-          drawWaistDartLocal(clampedBaseX, baseY, halfW, tipTopY, color);
-          drawLowerWaistDartLocal(clampedBaseX, baseY, halfW, apexBottomY, color);
-        }
-      }
-    }
-  } else {
-    // SINGLE: no separation offset, so baseY should work.
-    const res = safeClampedBaseYAtX(baseRefX);
-    if (!res) return;
-
-    const baseX = res.baseX;
-    const baseY = res.baseY;
-
-    if (Number.isFinite(baseY) && inner > 0) {
-      const halfW = widthToHalfPx(inner);
-      if (Number.isFinite(halfW) && halfW > 0) {
-        drawWaistDartLocal(baseX, baseY, halfW, tipTopY, color);
-        drawLowerWaistDartLocal(baseX, baseY, halfW, apexBottomY, color);
-      }
-    }
+  if (Number.isFinite(halfOuterW) && halfOuterW > 0) {
+    drawWaistDartLocal(outerRes.baseX, outerRes.baseY, halfOuterW, tipTopY, color);
+    drawLowerWaistDartLocal(outerRes.baseX, outerRes.baseY, halfOuterW, apexBottomY, color);
   }
 }
 
-// FRONT darts
-drawFrontOrBackDarts({
-  isDouble: frontDouble,
-  inner: frontInnerWidth,
-  outer: frontOuterWidth,
-  baseRefX: frontBaseReferenceX,
-  color: '#e11d48',
-  tipTopY: frontTopTipY,
-  apexBottomY: frontBottomApexY,
-});
+function drawSingleDart({
+  innerWidthInches,
+  color,
+  baseCenterX,
+  tipTopY,
+  apexBottomY,
+}) {
+  const res = safeClampedBaseYAtX(baseCenterX);
+  if (!res) return;
 
-// BACK darts
-drawFrontOrBackDarts({
-  isDouble: backDouble,
-  inner: backInnerWidth,
-  outer: backOuterWidth,
-  baseRefX: backBaseReferenceX,
-  color: '#9333ea',
-  tipTopY: backTopTipY,
-  apexBottomY: backBottomApexY,
-});
+  const halfW = widthToHalfPx(innerWidthInches);
+  if (!Number.isFinite(halfW) || halfW <= 0) return;
 
-            
+  drawWaistDartLocal(res.baseX, res.baseY, halfW, tipTopY, color);
+  drawLowerWaistDartLocal(res.baseX, res.baseY, halfW, apexBottomY, color);
+}
+
+// =====================
+// 6) Compute FRONT and BACK intake widths + centers using your professional notes
+// =====================
+
+// Professional spacing between dart centers (1.25" .. 1.5"), choose a midpoint default 1.375"
+const dartCenterSpacingFrontBackInches = 1.375;
+
+// --- Front double intake total (your original formula) then split 60/40 ---
+const totalFrontIntakeInches = Math.max(1.0, (waist / 24) * 1.25);
+const frontInnerWidth = +(totalFrontIntakeInches * 0.60).toFixed(3); // 60% to inner
+const frontOuterWidth = +(totalFrontIntakeInches * 0.40).toFixed(3); // 40% to outer
+
+// --- Back double intake total (your original formula) then split 50/50 ---
+const totalBackIntakeInches = Math.max(1.0, (waist / 24) * 1.0);
+const backInnerWidth = +(totalBackIntakeInches * 0.50).toFixed(3);
+const backOuterWidth = +(totalBackIntakeInches * 0.50).toFixed(3);
+
+// =====================
+// 7) Compute dart center anchor X positions
+// =====================
+
+// FRONT: INNER dart center must align with vertical drop from Point X -> use pointXX
+const frontInnerCenterX = pointXX; // Point X (True Bust Point) vertical drop
+
+// BACK: use provided backBaseReferenceX if it exists; otherwise fallback to a safe value.
+// Your earlier design presumably set backBaseReferenceX to align inner back under the back balance point.
+let backInnerCenterX = Number(backBaseReferenceX);
+if (!Number.isFinite(backInnerCenterX)) {
+  // fallback: somewhere between CB and CF boundaries; this prevents NaN and keeps drawing stable
+  backInnerCenterX = 50; 
+}
+
+// =====================
+// 8) Draw FRONT
+// =====================
+if (frontDouble) {
+  drawDoubleFrontOrBackDarts({
+    isDouble: true,
+    color: '#e11d48',
+    anchorInnerCenterX: frontInnerCenterX,
+    tipTopY: frontTopTipY,
+    apexBottomY: frontBottomApexY,
+    innerWidthInches: frontInnerWidth,
+    outerWidthInches: frontOuterWidth,
+    spacingBetweenCentersInches: dartCenterSpacingFrontBackInches,
+  });
+} else {
+  // If single darts are enabled, draw using the inner width as the single intake
+  drawSingleDart({
+    innerWidthInches: frontInnerWidth,
+    color: '#e11d48',
+    baseCenterX: frontInnerCenterX,
+    tipTopY: frontTopTipY,
+    apexBottomY: frontBottomApexY,
+  });
+}
+
+// =====================
+// 9) Draw BACK
+// =====================
+if (backDouble) {
+  drawDoubleFrontOrBackDarts({
+    isDouble: true,
+    color: '#9333ea',
+    anchorInnerCenterX: backInnerCenterX,
+    tipTopY: backTopTipY,
+    apexBottomY: backBottomApexY,
+    innerWidthInches: backInnerWidth,
+    outerWidthInches: backOuterWidth,
+    spacingBetweenCentersInches: dartCenterSpacingFrontBackInches,
+  });
+} else {
+  drawSingleDart({
+    innerWidthInches: backInnerWidth,
+    color: '#9333ea',
+    baseCenterX: backInnerCenterX,
+    tipTopY: backTopTipY,
+    apexBottomY: backBottomApexY,
+  });
+}
+ 
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
             const sleeveGroup = document.querySelector('#svg-sleeve .pattern-group-sub');
