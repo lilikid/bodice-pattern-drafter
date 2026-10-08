@@ -2351,11 +2351,12 @@ appendLabel(
 
 
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
-// Uses your Step 28 trueBustLineY and bustLineY for dart termination rules.
+// Uses your Step 28 trueBustLineY and bustLineY for dart termination rules,
+// and your Step 29 hipLineY/pointXY (apex X / true bust point) logic for lower tips.
 
-//
+// =====================
 // 1) LW endpoints (from STEP 29)
-//
+// =====================
 const LW_X1 = cbWaistIntersectionX;
 const LW_Y1 = cbWaistIntersectionY;
 const LW_X2 = pointLW_X;
@@ -2424,42 +2425,47 @@ function readNumber(id, fallback) {
   return Number.isFinite(v) ? v : fallback;
 }
 
-//
-// 2) Dart TOP termination rules (from your Step 28)
-//    IMPORTANT: this must use trueBustLineY created in Step 28.
-//
-const frontTopTipY = trueBustLineY + (1.0 * scaleFactor); // 1" below True Bust Line
+// =====================
+// 2) Dart TOP termination rules (match your clarification)
+// =====================
+// FRONT: top tip = 1" below True Bust Line (trueBustLineY + 1.0")
+const frontTopTipY = trueBustLineY + (1.0 * scaleFactor);
 
-// For back, you said: 1.5" to 2" below upper Bust Line.
-// Choose one value. If you don’t specify, I’ll use 1.75".
-const backTopTipOffsetInches = 1.75;
+// BACK: top tip = 1.5" to 2.0" below Bust Line (use 1.75" default; change if you want)
+const backTopTipOffsetInches = 1.75; // allowed range: 1.5 .. 2.0
 const backTopTipY = bustLineY + (backTopTipOffsetInches * scaleFactor);
 
-//
-// 3) Lower dart apices (keep your earlier logic)
-//    If you already have these variables defined in earlier steps, use them.
-//    If you don’t, then you must tell me where/how they’re computed.
-//    (I won't invent them because that would break your rules.)
-//
-if (typeof frontBottomApexY === 'undefined') {
-  throw new Error('Step 31: frontBottomApexY is not defined. Define it in your earlier steps.');
-}
-if (typeof backBottomApexY === 'undefined') {
-  throw new Error('Step 31: backBottomApexY is not defined. Define it in your earlier steps.');
-}
+// =====================
+// 3) Dart BOTTOM apex rules (below apex X point)
+// =====================
+// Your apex X / True Bust Point is pointXY (set in Step 28).
+// We keep the bottom tip using the earlier "Hip Line - 2"" idea,
+// but enforce it is ALWAYS below the apex X point.
+const bottomOffsetInchesFromHip = 2.0; // earlier logic: hipLineY - 2"
+const bottomApexCandidateY = hipLineY - (bottomOffsetInchesFromHip * scaleFactor);
 
-//
-// 4) Compute total waist excess (UPDATED)
+// Safety: must be below apex X (pointXY)
+const minBelowApexPx = 0.25 * scaleFactor; // small gap so lines don't visually collide
+const bottomApexY = Math.max(bottomApexCandidateY, pointXY + minBelowApexPx);
+
+// Define both front/back bottom apices (same rule; split later if you want different)
+const frontBottomApexY = bottomApexY;
+const backBottomApexY  = bottomApexY;
+
+// =====================
+// 4) Compute total waist excess + distribution (your existing Step 31 logic)
+// =====================
 const waistInput = readNumber('waist', 0);
 const waistEase  = readNumber('waistEase', 0);
 const totalWaistTarget = waistInput + waistEase;
 
+// Width of the drawn bodice waist line between CF and CB (in pixels)
 const drawnBlockWaistWidthPx = cfWaistIntersectionX - cbWaistIntersectionX;
+
+// Excess (in inches)
 const excessPx = Math.max(0, drawnBlockWaistWidthPx - (totalWaistTarget * scaleFactor));
 const totalWaistExcess = excessPx / scaleFactor; // inches
 
-//
-// 5) Distribution + drawing
 const separationPx = 0.35 * scaleFactor;
 
 const frontDouble = document.getElementById('doubleDartFront')?.checked;
@@ -2467,6 +2473,7 @@ const backDouble  = document.getElementById('doubleDartBack')?.checked;
 
 const cbAnchorX = 50;
 
+// Reference x positions for front/back dart bases (kept from your prior code)
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
   : (cbAnchorX - 4 * scaleFactor);
@@ -2474,9 +2481,10 @@ const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
 const backWidthInchesTotal =
   readNumber('backWidth', 14.0) + readNumber('backWidthEase', 0.0);
 
+// Back base reference uses 1/4 of back width
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
-// Intake rule you had:
+// Intake rule distribution (kept from your prior code)
 const verticalDartTotalIntake = totalWaistExcess * 0.68;
 const backDartTotalIntake  = verticalDartTotalIntake * 0.55;
 const frontDartTotalIntake = verticalDartTotalIntake * 0.45;
@@ -2500,10 +2508,13 @@ if (backDouble) {
   backOuterWidth = 0;
 }
 
-//
-// FRONT darts (TOP + LOWER)
-//
+// =====================
+// 5) Draw darts (TOP + LOWER)
+// =====================
+
+// FRONT darts
 if (frontDouble) {
+  // inner
   if (frontInnerWidth > 0) {
     const baseX = frontBaseReferenceX - separationPx;
     const baseY = lwBaseY_atX(baseX);
@@ -2512,6 +2523,7 @@ if (frontDouble) {
     drawWaistDartLocal(baseX, baseY, halfW, frontTopTipY, '#e11d48');
     drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
   }
+  // outer
   if (frontOuterWidth > 0) {
     const baseX = frontBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX);
@@ -2529,10 +2541,9 @@ if (frontDouble) {
   drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
 }
 
-//
-// BACK darts (TOP + LOWER)
-//
+// BACK darts
 if (backDouble) {
+  // inner
   if (backInnerWidth > 0) {
     const baseX = backBaseReferenceX - separationPx;
     const baseY = lwBaseY_atX(baseX);
@@ -2541,6 +2552,7 @@ if (backDouble) {
     drawWaistDartLocal(baseX, baseY, halfW, backTopTipY, '#9333ea');
     drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
   }
+  // outer
   if (backOuterWidth > 0) {
     const baseX = backBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX);
