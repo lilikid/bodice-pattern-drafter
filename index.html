@@ -2310,16 +2310,14 @@ if (sideDartBackInput) {
 
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
 //
-// This keeps your existing TOP dart behavior exactly (drawWaistDartLocal).
-// Then it ADDS a LOWER dart part that terminates at the corrected LOWER tip
-// (1.5–2 inches above hip line) without changing your upper darts.
+// Keeps your existing TOP dart behavior (drawWaistDartLocal)
+// Then ADDS a LOWER dart part that terminates at the corrected LOWER tip
+// (1.5–2 inches above hip line) WITHOUT changing your upper darts.
 
 // ----------------------
 // Assumes you already have (from STEP 29):
 // - pointLW_X, pointLW_Y
 // - cfAnchorX
-//
-// And LW geometry:
 // - cbWaistIntersectionX, cbWaistIntersectionY
 // - bodiceGroup, scaleFactor
 // ----------------------
@@ -2418,6 +2416,7 @@ const backApexY  = bustLineY     + (BACK_DROP_INCHES  * scaleFactor);
 // LOWER tip correction: stop 1.5–2 inches above hip line
 // ----------------------
 const BOTTOM_ABOVE_HIP_IN = 1.75; // choose 1.5 or 2 if you want; 1.75 is mid
+
 const frontBottomApexY = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
 const backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
 
@@ -2432,7 +2431,6 @@ const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   : (cfAnchorX - 4 * scaleFactor);
 
 // BACK: corrected rule = from CB + (backWidth / 4)
-// (CB x is 50 in your code)
 const cbAnchorX = 50;
 
 const backWidthInchesTotal =
@@ -2442,7 +2440,7 @@ const backWidthInchesTotal =
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
 // ----------------------
-// UI inputs (dart widths) + ADD calculated mapping from excess waist
+// UI inputs (dart widths) + enforce totals constraint
 // ----------------------
 
 // keep your existing double-dart checkboxes (already working)
@@ -2453,7 +2451,7 @@ const backDouble  = document.getElementById('doubleDartBack')?.checked;
 // Use excess waist computed in STEP 29 (your earlier variable name was `excessWaist`)
 const excessWaistClamped = Math.max(0, excessWaist ?? 0);
 
-// Step: Side seam gets 32%, vertical darts get 68%
+// Side seam gets 32%, vertical darts get 68%
 const VERTICAL_DART_FRACTION = 0.68; // = 1 - 0.32
 const verticalDartTotalIntake = excessWaistClamped * VERTICAL_DART_FRACTION;
 
@@ -2461,35 +2459,80 @@ const verticalDartTotalIntake = excessWaistClamped * VERTICAL_DART_FRACTION;
 const BACK_FRACTION  = 0.55;
 const FRONT_FRACTION = 0.45;
 
-const backDartTotalIntake  = verticalDartTotalIntake * BACK_FRACTION;
-const frontDartTotalIntake = verticalDartTotalIntake * FRONT_FRACTION;
+const backVerticalTotal  = verticalDartTotalIntake * BACK_FRACTION;   // cap: inner+outer
+const frontVerticalTotal = verticalDartTotalIntake * FRONT_FRACTION;  // cap: inner+outer
 
-// Sub-distribute based on single vs double, but keep your existing behavior:
-// Double: inner 60%, outer 40%
-// Single: use inner only, outer = 0
-const INNER_FRACTION = 0.60;
-const OUTER_FRACTION = 0.40;
+// Default split when double is ON but values are missing/invalid
+const DEFAULT_FRONT_INNER_FRAC = 0.60;
+const DEFAULT_FRONT_OUTER_FRAC = 0.40;
+
+// ✅ requirement: back default is 0.5 / 0.5
+const DEFAULT_BACK_INNER_FRAC  = 0.50;
+const DEFAULT_BACK_OUTER_FRAC  = 0.50;
+
+// Helper: scale (inner, outer) so that inner+outer == cap, preserving ratio
+function scaleToCap(inner, outer, cap) {
+  inner = Math.max(0, inner);
+  outer = Math.max(0, outer);
+  const sum = inner + outer;
+
+  if (cap <= 0) return { inner: 0, outer: 0 };
+  if (sum <= 1e-9) return { inner: cap, outer: 0 }; // stable: all to inner if 0/0
+
+  const scale = cap / sum; // ensures inner+outer == cap
+  return { inner: inner * scale, outer: outer * scale };
+}
+
+// Read user override box values (allowed to change, but cannot break caps)
+const userFrontInner = readNumber('frontInnerWidth', NaN);
+const userFrontOuter = readNumber('frontOuterWidth', NaN);
+const userBackInner  = readNumber('backInnerWidth', NaN);
+const userBackOuter  = readNumber('backOuterWidth', NaN);
 
 let frontInnerWidth, frontOuterWidth, backInnerWidth, backOuterWidth;
 
-if (frontDouble) {
-  frontInnerWidth = frontDartTotalIntake * INNER_FRACTION;
-  frontOuterWidth = frontDartTotalIntake * OUTER_FRACTION;
-} else {
-  frontInnerWidth = frontDartTotalIntake;
+// ---- FRONT widths (enforce rules) ----
+// Rule: if frontDouble is NOT checked => only one dart with total == frontVerticalTotal
+// i.e. inner = frontVerticalTotal, outer = 0
+if (!frontDouble) {
+  frontInnerWidth = frontVerticalTotal;
   frontOuterWidth = 0;
+} else {
+  // Rule: if double is checked => user can override, but cannot exceed cap
+  const frontUserValid = Number.isFinite(userFrontInner) && Number.isFinite(userFrontOuter);
+
+  if (frontUserValid) {
+    const scaled = scaleToCap(userFrontInner, userFrontOuter, frontVerticalTotal);
+    frontInnerWidth = scaled.inner;
+    frontOuterWidth = scaled.outer;
+  } else {
+    frontInnerWidth = frontVerticalTotal * DEFAULT_FRONT_INNER_FRAC;
+    frontOuterWidth = frontVerticalTotal * DEFAULT_FRONT_OUTER_FRAC;
+  }
 }
 
-if (backDouble) {
-  backInnerWidth = backDartTotalIntake * INNER_FRACTION;
-  backOuterWidth = backDartTotalIntake * OUTER_FRACTION;
-} else {
-  backInnerWidth = backDartTotalIntake;
+// ---- BACK widths (enforce rules) ----
+// Rule: if backDouble is NOT checked => only one dart with total == backVerticalTotal
+// i.e. inner = backVerticalTotal, outer = 0
+if (!backDouble) {
+  backInnerWidth = backVerticalTotal;
   backOuterWidth = 0;
+} else {
+  // Rule: if double is checked => user can override, but cannot exceed cap
+  const backUserValid = Number.isFinite(userBackInner) && Number.isFinite(userBackOuter);
+
+  if (backUserValid) {
+    const scaled = scaleToCap(userBackInner, userBackOuter, backVerticalTotal);
+    backInnerWidth = scaled.inner;
+    backOuterWidth = scaled.outer;
+  } else {
+    backInnerWidth = backVerticalTotal * DEFAULT_BACK_INNER_FRAC;   // 0.5
+    backOuterWidth = backVerticalTotal * DEFAULT_BACK_OUTER_FRAC;   // 0.5
+  }
 }
 
 // ----------------------
-// Draw FRONT darts (TOP using your original function, LOWER using corrected bottom tip)
+// Draw FRONT darts (TOP unchanged, LOWER added)
 // ----------------------
 if (frontDouble) {
   // inner
@@ -2498,38 +2541,40 @@ if (frontDouble) {
     const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(frontInnerWidth);
 
-    // TOP (unchanged)
+    // TOP
     drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
 
-    // LOWER (added)
+    // LOWER
     drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
   }
+
   // outer
   if (frontOuterWidth > 0) {
     const baseX = frontBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(frontOuterWidth);
 
-    // TOP (unchanged)
+    // TOP
     drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
 
-    // LOWER (added)
+    // LOWER
     drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
   }
 } else {
+  // single front
   const baseX = frontBaseReferenceX;
   const baseY = lwBaseY_atX(baseX); // <-- LW
   const halfW = widthToHalfPx(frontInnerWidth);
 
-  // TOP (unchanged)
+  // TOP
   drawWaistDartLocal(baseX, baseY, halfW, frontApexY, '#e11d48');
 
-  // LOWER (added)
+  // LOWER
   drawLowerWaistDartLocal(baseX, baseY, halfW, frontBottomApexY, '#e11d48');
 }
 
 // ----------------------
-// Draw BACK darts (TOP using your original function, LOWER using corrected bottom tip)
+// Draw BACK darts (TOP unchanged, LOWER added)
 // ----------------------
 if (backDouble) {
   // inner
@@ -2538,33 +2583,35 @@ if (backDouble) {
     const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(backInnerWidth);
 
-    // TOP (unchanged)
+    // TOP
     drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
 
-    // LOWER (added)
+    // LOWER
     drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
   }
+
   // outer
   if (backOuterWidth > 0) {
     const baseX = backBaseReferenceX + separationPx;
     const baseY = lwBaseY_atX(baseX); // <-- LW
     const halfW = widthToHalfPx(backOuterWidth);
 
-    // TOP (unchanged)
+    // TOP
     drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
 
-    // LOWER (added)
+    // LOWER
     drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
   }
 } else {
+  // single back
   const baseX = backBaseReferenceX;
   const baseY = lwBaseY_atX(baseX); // <-- LW
   const halfW = widthToHalfPx(backInnerWidth);
 
-  // TOP (unchanged)
+  // TOP
   drawWaistDartLocal(baseX, baseY, halfW, backApexY, '#9333ea');
 
-  // LOWER (added)
+  // LOWER
   drawLowerWaistDartLocal(baseX, baseY, halfW, backBottomApexY, '#9333ea');
 }
 
