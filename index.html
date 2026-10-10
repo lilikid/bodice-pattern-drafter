@@ -2263,17 +2263,6 @@ appendLabel(bodiceGroup, 'Lower Waist Line', (cbWaistIntersectionX + pointLW_X) 
 const bustUser  = parseFloat(document.getElementById('bust').value);
 const waistUser = parseFloat(document.getElementById('waist').value);
 
-// half-body targets
-const halfBustTarget  = bustUser / 2;
-const halfWaistTarget = waistUser / 2;
-
-// Excess waist (only positive contributes to shaping)
-const excessWaist = Math.max(0, halfBustTarget - halfWaistTarget);
-
-// Step 29a ===== USER measurements (NO ease) =====
-const bustUser  = parseFloat(document.getElementById('bust').value);
-const waistUser = parseFloat(document.getElementById('waist').value);
-
 // Guard (optional)
 if (isNaN(bustUser) || isNaN(waistUser)) {
   console.warn('bust/waist inputs are not valid numbers');
