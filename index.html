@@ -2308,23 +2308,6 @@ if (sideDartBackInput) {
  // const backSideDartS    = parseFloat(document.getElementById('sideDartBackInput').value);
 
 
-// --- STEP 30: Vertical Line from Point X Crossing Waist Line ---
-// Using pointXX and pointXY calculated in Step 28 without modifying them
-const step30LineEndY = hipLineY + 25; // Extends down past the waist line toward the hip line
-
-const verticalLineFromPointX = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-verticalLineFromPointX.setAttribute('x1', pointXX);
-verticalLineFromPointX.setAttribute('y1', pointXY);
-verticalLineFromPointX.setAttribute('x2', pointXX);
-verticalLineFromPointX.setAttribute('y2', step30LineEndY);
-verticalLineFromPointX.setAttribute('stroke', '#7c3aed');
-verticalLineFromPointX.setAttribute('stroke-width', '1.5');
-verticalLineFromPointX.setAttribute('stroke-dasharray', '4 4');
-bodiceGroup.appendChild(verticalLineFromPointX);
-
-// Label positioned near the waist line intersection
-appendLabel(bodiceGroup, 'Step 30: Line from Point X across Waist', pointXX + 10, waistLineY, '#7c3aed', '10', '600', false);
-
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
 //
 // This keeps your existing TOP dart behavior exactly (drawWaistDartLocal).
@@ -2444,7 +2427,6 @@ const backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
 const frontDartCenterSpacingIn = 1.5; // between inner and outer front dart centers (inches)
 const separationPx = (frontDartCenterSpacingIn / 2) * scaleFactor; // half-distance from center to each dart center
 
-
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
   : (cfAnchorX - 4 * scaleFactor);
@@ -2460,15 +2442,51 @@ const backWidthInchesTotal =
 const backBaseReferenceX = cbAnchorX + ((backWidthInchesTotal / 4) * scaleFactor);
 
 // ----------------------
-// UI inputs (dart widths)
+// UI inputs (dart widths) + ADD calculated mapping from excess waist
 // ----------------------
-const frontInnerWidth  = readNumber('frontInnerWidth', 0.75);
-const frontOuterWidth  = readNumber('frontOuterWidth', 0.75);
-const backInnerWidth   = readNumber('backInnerWidth', 0.5);
-const backOuterWidth   = readNumber('backOuterWidth', 0.5);
 
+// keep your existing double-dart checkboxes (already working)
 const frontDouble = document.getElementById('doubleDartFront')?.checked;
 const backDouble  = document.getElementById('doubleDartBack')?.checked;
+
+// IMPORTANT:
+// Use excess waist computed in STEP 29 (your earlier variable name was `excessWaist`)
+const excessWaistClamped = Math.max(0, excessWaist ?? 0);
+
+// Step: Side seam gets 32%, vertical darts get 68%
+const VERTICAL_DART_FRACTION = 0.68; // = 1 - 0.32
+const verticalDartTotalIntake = excessWaistClamped * VERTICAL_DART_FRACTION;
+
+// Split vertical darts between back and front: 55% back, 45% front
+const BACK_FRACTION  = 0.55;
+const FRONT_FRACTION = 0.45;
+
+const backDartTotalIntake  = verticalDartTotalIntake * BACK_FRACTION;
+const frontDartTotalIntake = verticalDartTotalIntake * FRONT_FRACTION;
+
+// Sub-distribute based on single vs double, but keep your existing behavior:
+// Double: inner 60%, outer 40%
+// Single: use inner only, outer = 0
+const INNER_FRACTION = 0.60;
+const OUTER_FRACTION = 0.40;
+
+let frontInnerWidth, frontOuterWidth, backInnerWidth, backOuterWidth;
+
+if (frontDouble) {
+  frontInnerWidth = frontDartTotalIntake * INNER_FRACTION;
+  frontOuterWidth = frontDartTotalIntake * OUTER_FRACTION;
+} else {
+  frontInnerWidth = frontDartTotalIntake;
+  frontOuterWidth = 0;
+}
+
+if (backDouble) {
+  backInnerWidth = backDartTotalIntake * INNER_FRACTION;
+  backOuterWidth = backDartTotalIntake * OUTER_FRACTION;
+} else {
+  backInnerWidth = backDartTotalIntake;
+  backOuterWidth = 0;
+}
 
 // ----------------------
 // Draw FRONT darts (TOP using your original function, LOWER using corrected bottom tip)
