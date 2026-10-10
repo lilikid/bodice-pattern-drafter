@@ -2270,69 +2270,54 @@ const halfWaistTarget = waistUser / 2;
 // Excess waist (only positive contributes to shaping)
 const excessWaist = Math.max(0, halfBustTarget - halfWaistTarget);
 
-    =========================
-     STEP 29a: Calculate Excess Waist (USER inputs only)
-     ========================= -->
-<script>
-  // Read user inputs
-  const bustUser  = parseFloat(document.getElementById('bust').value);
-  const waistUser = parseFloat(document.getElementById('waist').value);
+// Step 29a ===== USER measurements (NO ease) =====
+const bustUser  = parseFloat(document.getElementById('bust').value);
+const waistUser = parseFloat(document.getElementById('waist').value);
 
-  // Guard (optional)
-  if (isNaN(bustUser) || isNaN(waistUser)) {
-    console.warn('bust/waist inputs are not valid numbers');
-  }
+// Guard (optional)
+if (isNaN(bustUser) || isNaN(waistUser)) {
+  console.warn('bust/waist inputs are not valid numbers');
+}
 
-  // half-body targets
-  const halfBustTarget  = bustUser / 2;
-  const halfWaistTarget = waistUser / 2;
+// half-body targets
+const halfBustTarget  = bustUser / 2;
+const halfWaistTarget = waistUser / 2;
 
-  // Excess waist (only positive contributes to shaping)
-  const excessWaist = Math.max(0, halfBustTarget - halfWaistTarget);
+// Excess waist (only positive contributes to shaping)
+const excessWaist = Math.max(0, halfBustTarget - halfWaistTarget);
 
-  // Ensure the UI exists, then set default shown value
-  const excessWaistInput = document.getElementById('excessWaistInput');
-  if (excessWaistInput) {
-    // Default value shown to user (user can override manually later)
-    // If you want "only set on first load", tell me and I’ll add a dirty-check.
-    excessWaistInput.value = excessWaist.toFixed(2);
-  }
+// Ensure the UI exists, then set default shown value
+const excessWaistInput = document.getElementById('excessWaistInput');
+if (excessWaistInput) {
+  excessWaistInput.value = excessWaist.toFixed(2);
+}
 
+// Step 29b: Calculate Side Seam Dart S from Excess Waist
+// fraction of excess used for side seam shaping
+const SIDE_SEAM_FRACTION = 0.32;
 
-<!-- =========================
-     STEP 29b: Calculate Side Seam Dart S from Excess Waist
-     (USER can override the two values)
-     ========================= -->
-  // fraction of excess used for side seam shaping
-  const SIDE_SEAM_FRACTION = 0.32;
+const sideSeamTotalIntake = excessWaist * SIDE_SEAM_FRACTION;
 
-  // IMPORTANT:
-  // Use the computed excessWaist for defaults, but later when drafting use:
-  //   parseFloat(document.getElementById('excessWaistInput').value)
-  // so user overrides are honored.
-  const sideSeamTotalIntake = excessWaist * SIDE_SEAM_FRACTION;
+// split equally to front/back
+const sideDartFrontDefault = sideSeamTotalIntake / 2;
+const sideDartBackDefault  = sideSeamTotalIntake / 2;
 
-  // split equally to front/back (adjust later if you want asymmetry)
-  const sideDartFrontDefault = sideSeamTotalIntake / 2;
-  const sideDartBackDefault  = sideSeamTotalIntake / 2;
+// Update UI defaults
+const sideDartFrontInput = document.getElementById('sideDartFrontInput');
+if (sideDartFrontInput) {
+  sideDartFrontInput.value = sideDartFrontDefault.toFixed(2);
+}
 
-  // Update UI defaults (user can change them)
-  const sideDartFrontInput = document.getElementById('sideDartFrontInput');
-  if (sideDartFrontInput) {
-    sideDartFrontInput.value = sideDartFrontDefault.toFixed(2);
-  }
+const sideDartBackInput = document.getElementById('sideDartBackInput');
+if (sideDartBackInput) {
+  sideDartBackInput.value = sideDartBackDefault.toFixed(2);
+}
 
-  const sideDartBackInput = document.getElementById('sideDartBackInput');
-  if (sideDartBackInput) {
-    sideDartBackInput.value = sideDartBackDefault.toFixed(2);
-  }
+// (later reading overrides:)
+ // const excessWaistUsed  = parseFloat(document.getElementById('excessWaistInput').value);
+ // const frontSideDartS   = parseFloat(document.getElementById('sideDartFrontInput').value);
+ // const backSideDartS    = parseFloat(document.getElementById('sideDartBackInput').value);
 
-  // When you start the actual waist-shaping drafting steps later,
-  // read these (so user overrides apply):
-  // const excessWaistUsed  = parseFloat(document.getElementById('excessWaistInput').value);
-  // const frontSideDartS   = parseFloat(document.getElementById('sideDartFrontInput').value);
-  // const backSideDartS    = parseFloat(document.getElementById('sideDartBackInput').value);
-        
 
 // --- STEP 30: Vertical Line from Point X Crossing Waist Line ---
 // Using pointXX and pointXY calculated in Step 28 without modifying them
