@@ -2384,7 +2384,9 @@ const backBottomApexY  = hipLineY - (BOTTOM_ABOVE_HIP_IN * scaleFactor);
 // ----------------------
 // Dart x “centers” (base centers) + double-dart separation
 // ----------------------
-const separationPx = 0.35 * scaleFactor;
+const frontDartCenterSpacingIn = 1.5; // between inner and outer front dart centers (inches)
+const separationPx = (frontDartCenterSpacingIn / 2) * scaleFactor; // half-distance from center to each dart center
+
 
 const frontBaseReferenceX = (typeof bustDartGuideLineX !== 'undefined')
   ? bustDartGuideLineX
