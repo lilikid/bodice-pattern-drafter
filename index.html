@@ -561,18 +561,23 @@
     }
 
     // Professional formula calculation based on waist/bust proportions
-    function calculateDefaultFrontDarts() {
-        const waist = parseFloat(document.getElementById('waist').value) || 26;
-        
-        // Standard proportional allocation for front double darts (e.g. 1.5" total intake split across two darts)
-        let totalFrontIntake = Math.max(1.0, (waist / 24) * 1.25); 
-        let halfIntake = +(totalFrontIntake / 2).toFixed(3);
-        
-        document.getElementById('frontInnerWidth').value = halfIntake;
-        document.getElementById('frontOuterWidth').value = halfIntake;
-        document.getElementById('frontInnerLength').value = 5.5;
-        document.getElementById('frontOuterLength').value = 5.0;
-    }
+function calculateDefaultFrontDarts() {
+  const waist = parseFloat(document.getElementById('waist').value) || 26;
+
+  // Keep your same intake formula, but allocate 60/40 instead of 50/50
+  let totalFrontIntake = Math.max(1.0, (waist / 24) * 1.25);
+
+  const inner = +(totalFrontIntake * 0.60).toFixed(3);
+  const outer = +(totalFrontIntake * 0.40).toFixed(3);
+
+  document.getElementById('frontInnerWidth').value = inner;
+  document.getElementById('frontOuterWidth').value = outer;
+
+  // keep your lengths
+  document.getElementById('frontInnerLength').value = 5.5;
+  document.getElementById('frontOuterLength').value = 5.0;
+}
+
 
     function calculateDefaultBackDarts() {
         const waist = parseFloat(document.getElementById('waist').value) || 26;
@@ -588,9 +593,14 @@
     }
 
     // Reset buttons to re-trigger professional calculations
-    function resetFrontDarts() {
-        calculateDefaultFrontDarts();
-    }
+  function resetFrontDarts() {
+  calculateDefaultFrontDarts();
+
+  if (document.getElementById('doubleDartFront')?.checked) {
+    frontExtraConfig.style.display = 'block';
+  }
+}
+
 
     function resetBackDarts() {
         calculateDefaultBackDarts();
