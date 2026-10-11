@@ -2311,9 +2311,13 @@ const sideDartBackInput = document.getElementById('sideDartBackInput');
 if (sideDartBackInput) {
   sideDartBackInput.value = sideDartBackDefault.toFixed(2);
 }
-// ================= Step 29c (UPDATED): Compute side-seam dart apex + DRAW curves =================
+// ================= Step 29c (UPDATED professional):
+// - Dart apex is locked to pointLW_Y
+// - Curve is "professional" (two-part cubic through apex)
+// - Fundamental rule: seam stays perfectly straight/vertical for first ~0.75–1.0" below underarm
+// =================
 
-// x where the baseline line segment (underarm -> hip) has y = yTarget
+// x where the baseline line segment (p1 -> p2) has y = yTarget
 function xAtYOnLine(x1, y1, x2, y2, yTarget) {
   const dy = (y2 - y1);
   if (Math.abs(dy) < 1e-6) return x1;
@@ -2321,19 +2325,14 @@ function xAtYOnLine(x1, y1, x2, y2, yTarget) {
   return x1 + (x2 - x1) * t;
 }
 
-/**
- * Compute a dart apex point whose Y is EXACTLY lowerWaistY.
- * The point is shifted inward/outward from the baseline at y=lowerWaistY by S pixels
- * along the perpendicular direction (x component only is effectively used since y is locked).
- */
+// Dart apex locked exactly at lowerWaistY (pointLW_Y)
 function computeSideSeamDartApexFromLowerWaist({
   underX, underY,
   hipX, hipY,
   lowerWaistY,      // MUST be pointLW_Y
   S,                 // side dart intake value
-  inwardSign = 1    // flip to -1 if dart goes outward
+  inwardSign = 1
 }) {
-  // baseline direction (underarm -> hip)
   const dx = hipX - underX;
   const dy = hipY - underY;
   const len = Math.max(1e-6, Math.hypot(dx, dy));
@@ -2341,15 +2340,12 @@ function computeSideSeamDartApexFromLowerWaist({
   // unit normal to baseline
   const nx = -dy / len;
 
-  // shift distance
   const shiftPx = S * scaleFactor;
-
-  // base x where baseline crosses y = lowerWaistY
   const baseX = xAtYOnLine(underX, underY, hipX, hipY, lowerWaistY);
 
   return {
     x: baseX + inwardSign * nx * shiftPx,
-    y: lowerWaistY // HARD LOCK to lower waist
+    y: lowerWaistY // HARD LOCK
   };
 }
 
@@ -2362,12 +2358,11 @@ const lowerWaistY = pointLW_Y;
 
 // These variables must already exist in your code:
 // - frontUnderarmPointX / frontUnderarmPointY
-// - backUnderarmPointX / bustLineY  (you used bustLineY as the back underarm Y)
+// - backUnderarmPointX / bustLineY
 // - frontHipPointX / frontHipPointY
 // - backHipPointX / hipLineY
 
-// Pick signs so your point ends up to the expected side of the seam.
-// If the dart goes the wrong way, flip the sign (-1 <-> 1).
+// (You already had correct signs for your coordinate system.)
 const frontInwardSign = -1;
 const backInwardSign  = 1;
 
@@ -2383,7 +2378,7 @@ const frontApex = computeSideSeamDartApexFromLowerWaist({
 
 const backApex = computeSideSeamDartApexFromLowerWaist({
   underX: backUnderarmPointX,
-  underY: bustLineY, // keep exactly as you used in your previous code
+  underY: bustLineY,
   hipX: backHipPointX,
   hipY: hipLineY,
   lowerWaistY,
@@ -2391,14 +2386,14 @@ const backApex = computeSideSeamDartApexFromLowerWaist({
   inwardSign: backInwardSign
 });
 
-// Export for Step 29 drawing
+// Export for your later Step 29 drawing
 const frontSideSeamDartPointX = frontApex.x;
 const frontSideSeamDartPointY = frontApex.y;
 
 const backSideSeamDartPointX = backApex.x;
 const backSideSeamDartPointY = backApex.y;
 
-// Debug (should match exactly)
+// Debug verification (should match EXACTLY)
 console.log(
   '[Step29c] pointLW_Y=', pointLW_Y,
   'frontSideSeamDartPointY=', frontSideSeamDartPointY,
@@ -2420,13 +2415,59 @@ backApexDot.setAttribute('r', '3.2');
 backApexDot.setAttribute('fill', '#dc2626');
 bodiceGroup.appendChild(backApexDot);
 
-// --------- Draw curves (UNDERARM -> APEX -> HIP) ---------
-// Use quadratic Bezier: M underarm Q apex hip
+// --------- Drawing helpers ---------
 
-function drawQuadraticCurve({ className, stroke, x0, y0, cx, cy, x1, y1, strokeWidth = 2 }) {
-  // remove old curve with same class to avoid duplicates
-  const old = bodiceGroup.querySelectorAll(`.${className}`);
-  old.forEach(el => el.remove());
+function clearByClass(className) {
+  bodiceGroup.querySelectorAll(`.${className}`).forEach(el => el.remove());
+}
+
+// Draw a professional curved seam:
+// 1) exact vertical straight segment for first ~0.75–1.0" underarm
+// 2) then a cubic path that passes through the dart apex (apex is join point)
+// 3) then continues to hip
+//
+// Tangency at the end of the vertical segment is controlled by cubic controls.
+function drawSeamWithVerticalThenThroughApexCubic({
+  className,
+  stroke,
+  strokeWidth,
+  xUnder, yUnder,
+  xApex,  yApex,
+  xHip,   yHip,
+  verticalInches = 0.90, // ~2.3cm; within 0.75–1.0" requirement
+  t = 0.42               // curve tension; tweak 0.35–0.55 if needed
+}) {
+  clearByClass(className);
+
+  const straightLenPx = verticalInches * scaleFactor;
+
+  // Must start exactly from underarm and go vertical/straight for the first portion
+  const yStraightEnd = yUnder + straightLenPx;
+  const xStraightEnd = xUnder;
+
+  // If apex is above the straight-end (rare), clamp straight-end not to overshoot apex
+  const yJoin = Math.max(yStraightEnd, Math.min(yApex, yHip));
+  // If yJoin hits apex/hip weirdly due to coordinate direction, do safe clamp:
+  const yStraightEndClamped = Math.min(yStraightEnd, Math.max(yApex, yHip));
+  const yS2 = yStraightEndClamped;
+  const xS2 = xUnder;
+
+  // Segment 1: S2 -> Apex (join at apex, so path passes through apex exactly)
+  // Enforce near-vertical tangent at S2 by setting first control point's x = xS2.
+  const c1x = xS2;
+  const c1y = yS2 + (yApex - yS2) * t;
+
+  // Segment 1 second control: pull toward apex with x near apex
+  const c2x = xApex;
+  const c2y = yApex - (yApex - yS2) * (t * 0.60);
+
+  // Segment 2: Apex -> Hip (also join at apex, so apex is on the path)
+  const c3x = xApex;
+  const c3y = yApex + (yHip - yApex) * (t * 0.60);
+
+  // Enforce gentle tangent leaving apex: control point closer to hip
+  const c4x = xHip;
+  const c4y = yHip - (yHip - yApex) * t;
 
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   path.setAttribute('class', className);
@@ -2435,41 +2476,54 @@ function drawQuadraticCurve({ className, stroke, x0, y0, cx, cy, x1, y1, strokeW
   path.setAttribute('stroke-width', strokeWidth);
   path.setAttribute('stroke-linecap', 'round');
 
-  // Quadratic curve
-  path.setAttribute('d', `M ${x0} ${y0} Q ${cx} ${cy} ${x1} ${y1}`);
+  // Move: Underarm -> straight end (vertical)
+  // Then cubic S2->Apex and cubic Apex->Hip (two cubics, apex is the join point)
+  const d = [
+    `M ${xUnder} ${yUnder}`,
+    `L ${xStraightEnd} ${yS2}`,
+    `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${xApex} ${yApex}`,
+    `C ${c3x} ${c3y}, ${c4x} ${c4y}, ${xHip} ${yHip}`
+  ].join(' ');
+
+  path.setAttribute('d', d);
   bodiceGroup.appendChild(path);
 }
 
-// Front curve
-drawQuadraticCurve({
+// --------- Draw curves (professional): vertical then through-apex cubic ---------
+
+// Front
+drawSeamWithVerticalThenThroughApexCubic({
   className: 'side-dart-curve-front',
   stroke: '#f59e0b',
-  x0: frontUnderarmPointX,
-  y0: frontUnderarmPointY,
-  cx: frontSideSeamDartPointX,
-  cy: frontSideSeamDartPointY,
-  x1: frontHipPointX,
-  y1: frontHipPointY,
-  strokeWidth: 2
+  strokeWidth: 2,
+  xUnder: frontUnderarmPointX,
+  yUnder: frontUnderarmPointY,
+  xApex: frontSideSeamDartPointX,
+  yApex: frontSideSeamDartPointY,
+  xHip: frontHipPointX,
+  yHip: frontHipPointY,
+  verticalInches: 0.90,
+  t: 0.42
 });
 
-// Back curve
-drawQuadraticCurve({
+// Back
+drawSeamWithVerticalThenThroughApexCubic({
   className: 'side-dart-curve-back',
   stroke: '#f97316',
-  x0: backUnderarmPointX,
-  y0: bustLineY, // keep consistent with your back underarm Y usage
-  cx: backSideSeamDartPointX,
-  cy: backSideSeamDartPointY,
-  x1: backHipPointX,
-  y1: hipLineY,
-  strokeWidth: 2
+  strokeWidth: 2,
+  xUnder: backUnderarmPointX,
+  yUnder: bustLineY,
+  xApex: backSideSeamDartPointX,
+  yApex: backSideSeamDartPointY,
+  xHip: backHipPointX,
+  yHip: hipLineY,
+  verticalInches: 0.90,
+  t: 0.42
 });
 
-// (Optional) Label the curve apices (uncomment if you want text)
+// (Optional labels)
 // appendLabel(bodiceGroup, 'Front dart apex', frontSideSeamDartPointX - 35, frontSideSeamDartPointY - 10, '#dc2626', '11', 'bold', false);
 // appendLabel(bodiceGroup, 'Back dart apex',  backSideSeamDartPointX - 35,  backSideSeamDartPointY - 10,  '#dc2626', '11', 'bold', false);
-
 
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
 //
