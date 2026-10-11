@@ -2312,10 +2312,105 @@ if (sideDartBackInput) {
   sideDartBackInput.value = sideDartBackDefault.toFixed(2);
 }
 
-// (later reading overrides:)
- // const excessWaistUsed  = parseFloat(document.getElementById('excessWaistInput').value);
- // const frontSideDartS   = parseFloat(document.getElementById('sideDartFrontInput').value);
- // const backSideDartS    = parseFloat(document.getElementById('sideDartBackInput').value);
+// ================= Step 29c: Compute side-seam dart apex points using LOWER WAIST (pointLW_Y) =================
+
+// x where the baseline line segment (underarm -> hip) has y = yTarget
+function xAtYOnLine(x1, y1, x2, y2, yTarget) {
+  const dy = (y2 - y1);
+  if (Math.abs(dy) < 1e-6) return x1;
+  const t = (yTarget - y1) / dy;
+  return x1 + (x2 - x1) * t;
+}
+
+// Compute an apex point at lower-waist level, then move it "inside" by S (perpendicular to baseline)
+function computeSideSeamDartApexFromLowerWaist({
+  underX, underY,
+  hipX, hipY,            // used to define baseline direction
+  lowerWaistY,          // MUST be pointLW_Y
+  S,                     // side dart intake value
+  inwardSign = 1,       // flip to -1 if dart goes outward
+  apexAlongT = 0.45     // where along the underarm->(lowerWaistBaselinePoint) we place the control/apex
+}) {
+  // Baseline direction point at LOWER WAIST Y
+  const baseXAtLower = xAtYOnLine(underX, underY, hipX, hipY, lowerWaistY);
+  const baseYAtLower = lowerWaistY;
+
+  // Vector from underarm to the lower-waist point on the baseline
+  const dx0 = baseXAtLower - underX;
+  const dy0 = baseYAtLower - underY;
+
+  const len0 = Math.max(1e-6, Math.hypot(dx0, dy0));
+  const nx = -dy0 / len0; // perpendicular unit normal
+  const ny =  dx0 / len0;
+
+  // Put an initial “apex base” somewhere between underarm and the lower-waist baseline point
+  const apexBaseX = underX + dx0 * apexAlongT;
+  const apexBaseY = underY + dy0 * apexAlongT;
+
+  // Convert S to pixels (YOUR S is in inches-compatible with your other inch->pixel usage)
+  const shiftPx = S * scaleFactor;
+
+  return {
+    x: apexBaseX + inwardSign * nx * shiftPx,
+    y: apexBaseY + inwardSign * ny * shiftPx
+  };
+}
+
+// Read dart S from UI (later user edits override defaults)
+const frontSideDartS = parseFloat(document.getElementById('sideDartFrontInput').value) || sideDartFrontDefault || 0;
+const backSideDartS  = parseFloat(document.getElementById('sideDartBackInput').value)  || sideDartBackDefault  || 0;
+
+// IMPORTANT: lower waist reference is pointLW_Y (NOT waistLineY)
+const lowerWaistY = pointLW_Y;
+
+// These variables must exist already in your code:
+/// - frontUnderarmPointX / frontUnderarmPointY
+/// - backUnderarmPointX / bustLineY   (or backUnderarmPointY if that’s what you use)
+/// - frontHipPointX / frontHipPointY
+/// - backHipPointX / hipLineY
+const frontApex = computeSideSeamDartApexFromLowerWaist({
+  underX: frontUnderarmPointX,
+  underY: frontUnderarmPointY,
+  hipX: frontHipPointX,
+  hipY: frontHipPointY,
+  lowerWaistY,
+  S: frontSideDartS,
+  inwardSign: 1,
+  apexAlongT: 0.45
+});
+
+const backApex = computeSideSeamDartApexFromLowerWaist({
+  underX: backUnderarmPointX,
+  underY: bustLineY,
+  hipX: backHipPointX,
+  hipY: hipLineY,
+  lowerWaistY,
+  S: backSideDartS,
+  inwardSign: 1,
+  apexAlongT: 0.45
+});
+
+// Export for your later Step 29 drawing
+const frontSideSeamDartPointX = frontApex.x;
+const frontSideSeamDartPointY = frontApex.y;
+
+const backSideSeamDartPointX = backApex.x;
+const backSideSeamDartPointY = backApex.y;
+
+// (Optional debug markers — remove if you already draw markers elsewhere)
+const frontApexDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+frontApexDot.setAttribute('cx', frontSideSeamDartPointX);
+frontApexDot.setAttribute('cy', frontSideSeamDartPointY);
+frontApexDot.setAttribute('r', '3.2');
+frontApexDot.setAttribute('fill', '#dc2626');
+bodiceGroup.appendChild(frontApexDot);
+
+const backApexDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+backApexDot.setAttribute('cx', backSideSeamDartPointX);
+backApexDot.setAttribute('cy', backSideSeamDartPointY);
+backApexDot.setAttribute('r', '3.2');
+backApexDot.setAttribute('fill', '#dc2626');
+bodiceGroup.appendChild(backApexDot);
 
 
 // --- STEP 31: Draw waist darts on the Lower Waist Line (LW) ---
