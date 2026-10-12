@@ -2954,18 +2954,53 @@ drawSplineThroughPoints({
 });
 
 
-// ===================== 3) Front Neck curve (quarter-arc style) =====================
-// Connect: Step 13 front neck point -> Step 14 Point F -> Step 13 base front Neck
+// ===================== 3) Front Neck curve (more down below F, flatter toward base) =====================
+// Shape goals:
+// - curve DROPS more just below Point F
+// - then relaxes and becomes flatter approaching baseFrontNeckY
+
+// Direction that matches which side the base is on (handles left/right automatically)
+const dirX = Math.sign(baseFrontNeckX - fPointX) || 1;
+
+// Tuning knobs (tweak as needed)
+const dropCm = 1.0;          // more = curvier down below F
+const dropPx = (dropCm / 2.54) * scaleFactor;
+
+const flatterNearBaseCm = 0.7; // how quickly it flattens toward base
+const flatterNearBasePx = (flatterNearBaseCm / 2.54) * scaleFactor;
+
+// Build extra points:
+// 1) F (given)
+// 2) Below F: pushed downward + slightly toward base direction
+// 3) Mid: starts coming back up / flattening trend
+// 4) Base: exact base point
+const belowFPoint = {
+  x: fPointX + dirX * (flatterNearBasePx * 0.25),
+  y: fPointY + dropPx
+};
+
+const midToBasePoint = {
+  x: fPointX + dirX * (flatterNearBasePx * 0.70),
+  // pull this point back toward the “flat” level while still trending from F to base
+  y: fPointY + (baseFrontNeckY - fPointY) * 0.55
+};
+
 drawSplineThroughPoints({
   className: 'french-front-neck-curve',
   stroke: '#9333ea',
   strokeWidth: 2.4,
   points: [
-    { x: frontNeckPointX, y: frontNeckPointY }, // Step 13 (front neck point)
-    { x: fPointX,         y: fPointY },         // Step 14 (Point F)
-    { x: baseFrontNeckX,  y: baseFrontNeckY }  // Step 13 (base front neck)
+    { x: frontNeckPointX, y: frontNeckPointY }, // Step 13
+    { x: fPointX,         y: fPointY },         // Step 14 Point F
+
+    belowFPoint,                                // more curvy down below F
+
+    midToBasePoint,                             // return toward flattening
+
+    { x: baseFrontNeckX,  y: baseFrontNeckY }  // base front neck (flatter)
   ]
 });
+
 
 
             // --- 2. SLEEVE BLOCK ---
