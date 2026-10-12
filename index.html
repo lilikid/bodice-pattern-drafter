@@ -2954,103 +2954,101 @@ drawSplineThroughPoints({
 });
 
 
-// ===================== Corrected Front Neck curve (90° to slanted shoulder) =====================
-// NOTE: Avoids redeclaring dxS/dyS (Step 15 already declares const dxS/dyS).
+// ===================== Smooth Front Neck curve with horizontal flattening 1.5cm before base =====================
 
-// 1) Shoulder direction (Front Neck -> Point S) — use renamed locals
+// --- 0) Build the shoulder direction (Front Neck -> Point S) ---
+// IMPORTANT: do NOT redeclare dxS/dyS if they already exist from Step 15.
+// This version uses local renamed variables.
 const dxS_local = pointSX - frontNeckPointX;
 const dyS_local = pointSY - frontNeckPointY;
 const distS_local = Math.hypot(dxS_local, dyS_local) || 1;
 const unitDxS_local = dxS_local / distS_local;
 const unitDyS_local = dyS_local / distS_local;
 
-// 2) Perpendicular directions (rotate ±90°)
+// Perpendicular directions rotate ±90°
 const perp1 = { dx: -unitDyS_local, dy: unitDxS_local }; // +90°
 const perp2 = { dx:  unitDyS_local, dy: -unitDxS_local }; // -90°
 
-// 3) Pick the perpendicular that points downward in SVG (positive dy)
+// Pick the perpendicular that points downward (SVG y increases downward)
 const startTangentDir = (perp1.dy >= perp2.dy) ? perp1 : perp2;
 
-// 4) Straight section length: 1.5 cm
+// --- 1) Convert 1.5cm to pixels (this is BOTH your earlier “straight” length and the flatten offset) ---
 const neckStraightCm = 1.5;
-const neckStraightInches = neckStraightCm / 2.54;      // cm -> inches
+const neckStraightInches = neckStraightCm / 2.54;
 const neckStraightPixels = neckStraightInches * scaleFactor;
 
-// 5) Straight endpoint after 1.5 cm
-const straightEndX = frontNeckPointX + startTangentDir.dx * neckStraightPixels;
-const straightEndY = frontNeckPointY + startTangentDir.dy * neckStraightPixels;
+// --- 2) Create the “flat point” 1.5cm before baseFrontNeck ---
+// Horizontal flattening means tangent is horizontal at this point.
+const flatBeforeBasePointX = baseFrontNeckX;                // usually CF x
+const flatBeforeBasePointY = baseFrontNeckY - neckStraightPixels;
 
-// 6) Helper: draw spline, enforcing tangent at Step 13
-function drawConstrainedSplineThroughPoints({
-  className,
-  stroke,
-  strokeWidth = 2.4,
-  points,
-  startTangentDir
-}) {
-  bodiceGroup.querySelectorAll(`.${className}`).forEach(el => el.remove());
+// --- 3) Tangents helper: build a smooth cubic bezier segment with endpoint tangents ---
+// cubic from P0->P1 where T0 is tangent at P0 and T1 tangent at P1 (Hermite form to Bezier)
+function cubicHermiteToBezierPath({ P0, P1, T0, T1 }) {
+  // For cubic Bezier: C1 = P0 + T0/3, C2 = P1 - T1/3
+  const c1x = P0.x + T0.dx / 3;
+  const c1y = P0.y + T0.dy / 3;
+  const c2x = P1.x - T1.dx / 3;
+  const c2y = P1.y - T1.dy / 3;
 
-  const P = points.map(p => ({ x: p.x, y: p.y }));
-  const n = P.length;
-  if (n < 2) return;
-
-  // normalize tangent
-  const L = Math.hypot(startTangentDir.dx, startTangentDir.dy) || 1;
-  const sT = { dx: startTangentDir.dx / L, dy: startTangentDir.dy / L };
-
-  // Build Catmull-Rom-style bezier segments
-  const segments = [];
-  for (let i = 0; i < n - 1; i++) {
-    const p0 = P[Math.max(0, i - 1)];
-    const p1 = P[i];
-    const p2 = P[i + 1];
-    const p3 = P[Math.min(n - 1, i + 2)];
-
-    const c1x = p1.x + ((p2.x - p0.x) / 6);
-    const c1y = p1.y + ((p2.y - p0.y) / 6);
-    const c2x = p2.x - ((p3.x - p1.x) / 6);
-    const c2y = p2.y - ((p3.y - p1.y) / 6);
-
-    segments.push({ c1x, c1y, c2x, c2y, x2: p2.x, y2: p2.y });
-  }
-
-  // Enforce tangent at Step 13 (first point) so it’s perpendicular to shoulder
-  const dStart = Math.hypot(P[1].x - P[0].x, P[1].y - P[0].y);
-  const alphaStart = dStart * 0.45;
-  segments[0].c1x = P[0].x + sT.dx * alphaStart;
-  segments[0].c1y = P[0].y + sT.dy * alphaStart;
-
-  let d = `M ${P[0].x} ${P[0].y}`;
-  for (const seg of segments) {
-    d += ` C ${seg.c1x} ${seg.c1y}, ${seg.c2x} ${seg.c2y}, ${seg.x2} ${seg.y2}`;
-  }
-
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('class', className);
-  path.setAttribute('fill', 'none');
-  path.setAttribute('stroke', stroke);
-  path.setAttribute('stroke-width', strokeWidth);
-  path.setAttribute('stroke-linecap', 'round');
-  path.setAttribute('stroke-linejoin', 'round');
-  path.setAttribute('d', d);
-
-  bodiceGroup.appendChild(path);
+  return `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${P1.x} ${P1.y}`;
 }
 
-// Draw: Step13 -> straight 1.5cm down along perpendicular to shoulder -> fPoint -> baseFrontNeck
-drawConstrainedSplineThroughPoints({
-  className: 'french-front-neck-curve',
-  stroke: '#9333ea',
-  strokeWidth: 2.4,
-  points: [
-    { x: frontNeckPointX, y: frontNeckPointY }, // meet at 90° (tangent at this point)
-    { x: straightEndX,   y: straightEndY },   // straight 1.5 cm
-    { x: fPointX,         y: fPointY },       // Step 14 Point F
-    { x: baseFrontNeckX,  y: baseFrontNeckY } // base front neck
-  ],
-  startTangentDir
-});
+// Normalize a direction
+function normDir(dx, dy) {
+  const L = Math.hypot(dx, dy) || 1;
+  return { dx: dx / L, dy: dy / L };
+}
 
+// Scale tangent length based on distances (prevents kinks)
+function scaleTangentByDistance(dir, fromP, toP, factor) {
+  const d = Math.hypot(toP.x - fromP.x, toP.y - fromP.y);
+  return { dx: dir.dx * d * factor, dy: dir.dy * d * factor };
+}
+
+// --- 4) Compute tangents ---
+// Points in order:
+const P0 = { x: frontNeckPointX, y: frontNeckPointY };                  // Step 13 meeting point
+const P1 = { x: fPointX, y: fPointY };                                  // Step 14 Point F
+const P2 = { x: flatBeforeBasePointX, y: flatBeforeBasePointY };        // flat tangent here (horizontal)
+const P3 = { x: baseFrontNeckX, y: baseFrontNeckY };                      // base front neck
+
+// Tangent at P0: perpendicular to shoulder (enforced)
+const P0Dir = normDir(startTangentDir.dx, startTangentDir.dy);
+const T0 = scaleTangentByDistance(P0Dir, P0, P1, 0.45);
+
+// Tangent at P1: average of adjacent directions (smooth, reduces cink)
+const dirIn1 = normDir(P1.x - P0.x, P1.y - P0.y);
+const dirOut1 = normDir(P2.x - P1.x, P2.y - P1.y);
+const avg1 = normDir(dirIn1.dx + dirOut1.dx, dirIn1.dy + dirOut1.dy);
+const T1 = scaleTangentByDistance(avg1, P1, P2, 0.35);
+
+// Tangent at flat point P2: horizontal (dy = 0)
+const flatDir = { dx: 1, dy: 0 }; // choose +x; direction sign doesn’t affect “horizontal”
+const T2 = scaleTangentByDistance(flatDir, P2, P3, 0.40);
+
+// Tangent at base point P3: horizontal too (keeps it smooth into the base)
+const T3 = scaleTangentByDistance(flatDir, P3, P2, 0.25);
+
+// --- 5) Draw 3 bezier segments: P0->P1, P1->P2, P2->P3 ---
+bodiceGroup.querySelectorAll(`.french-front-neck-curve`).forEach(el => el.remove());
+
+const d =
+  `M ${P0.x} ${P0.y} ` +
+  cubicHermiteToBezierPath({ P0, P1, T0, T1 }) + ' ' +
+  cubicHermiteToBezierPath({ P0: P1, P1: P2, T0: T1, T1: T2 }) + ' ' +
+  cubicHermiteToBezierPath({ P0: P2, P1: P3, T0: T2, T1: T3 });
+
+const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+path.setAttribute('class', 'french-front-neck-curve');
+path.setAttribute('fill', 'none');
+path.setAttribute('stroke', '#9333ea');
+path.setAttribute('stroke-width', 2.4);
+path.setAttribute('stroke-linecap', 'round');
+path.setAttribute('stroke-linejoin', 'round');
+path.setAttribute('d', d);
+
+bodiceGroup.appendChild(path);
 
 
             // --- 2. SLEEVE BLOCK ---
