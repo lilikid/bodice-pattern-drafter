@@ -2955,90 +2955,97 @@ drawSplineThroughPoints({
 
 
 // ===================== Smooth Front Neck curve with horizontal flattening 1.5cm before base =====================
+// ===================== Smooth almost quarter-circle Front Neck (flatten then quarter arc) =====================
 
-// --- 0) Build the shoulder direction (Front Neck -> Point S) ---
-// IMPORTANT: do NOT redeclare dxS/dyS if they already exist from Step 15.
-// This version uses local renamed variables.
+// NOTE: Avoid redeclaring dxS/dyS from Step 15. Use local names.
 const dxS_local = pointSX - frontNeckPointX;
 const dyS_local = pointSY - frontNeckPointY;
 const distS_local = Math.hypot(dxS_local, dyS_local) || 1;
 const unitDxS_local = dxS_local / distS_local;
 const unitDyS_local = dyS_local / distS_local;
 
-// Perpendicular directions rotate ±90°
-const perp1 = { dx: -unitDyS_local, dy: unitDxS_local }; // +90°
-const perp2 = { dx:  unitDyS_local, dy: -unitDxS_local }; // -90°
+// Perpendicular directions (±90°)
+const perp1 = { dx: -unitDyS_local, dy: unitDyS_local };
+const perp2 = { dx:  unitDyS_local, dy: -unitDxS_local };
 
-// Pick the perpendicular that points downward (SVG y increases downward)
+// Downward perpendicular (SVG y increases downward)
 const startTangentDir = (perp1.dy >= perp2.dy) ? perp1 : perp2;
 
-// --- 1) Convert 1.5cm to pixels (this is BOTH your earlier “straight” length and the flatten offset) ---
-const neckStraightCm = 1.5;
-const neckStraightInches = neckStraightCm / 2.54;
-const neckStraightPixels = neckStraightInches * scaleFactor;
+// 1.5cm in pixels
+const neckCm = 1.5;
+const neckIn = neckCm / 2.54;
+const neckPx = neckIn * scaleFactor;
 
-// --- 2) Create the “flat point” 1.5cm before baseFrontNeck ---
-// Horizontal flattening means tangent is horizontal at this point.
-const flatBeforeBasePointX = baseFrontNeckX;                // usually CF x
-const flatBeforeBasePointY = baseFrontNeckY - neckStraightPixels;
+// We want an “almost quarter-circle” near the base:
+// - Create a point 1.5cm above base where the tangent becomes horizontal
+// - Give it an x-offset so dx ≈ dy -> quarter-circle feel
+const flatBeforeBasePointX = baseFrontNeckX + neckPx;                 // horizontal offset
+const flatBeforeBasePointY = baseFrontNeckY - neckPx;                 // vertical lift
 
-// --- 3) Tangents helper: build a smooth cubic bezier segment with endpoint tangents ---
-// cubic from P0->P1 where T0 is tangent at P0 and T1 tangent at P1 (Hermite form to Bezier)
-function cubicHermiteToBezierPath({ P0, P1, T0, T1 }) {
-  // For cubic Bezier: C1 = P0 + T0/3, C2 = P1 - T1/3
-  const c1x = P0.x + T0.dx / 3;
-  const c1y = P0.y + T0.dy / 3;
-  const c2x = P1.x - T1.dx / 3;
-  const c2y = P1.y - T1.dy / 3;
+// Points
+const P0 = { x: frontNeckPointX,        y: frontNeckPointY };          // Step 13 meet point
+const P1 = { x: fPointX,               y: fPointY };                 // Step 14 Point F (enter arc region)
+const P2 = { x: flatBeforeBasePointX, y: flatBeforeBasePointY };       // “flatten” point ~1.5cm before base
+const P3 = { x: baseFrontNeckX,         y: baseFrontNeckY };            // base front neck
 
-  return `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${P1.x} ${P1.y}`;
-}
-
-// Normalize a direction
+// Helpers
 function normDir(dx, dy) {
   const L = Math.hypot(dx, dy) || 1;
   return { dx: dx / L, dy: dy / L };
 }
-
-// Scale tangent length based on distances (prevents kinks)
 function scaleTangentByDistance(dir, fromP, toP, factor) {
-  const d = Math.hypot(toP.x - fromP.x, toP.y - fromP.y);
+  const d = Math.hypot(toP.x - fromP.x, toP.y - fromP.y) || 1;
   return { dx: dir.dx * d * factor, dy: dir.dy * d * factor };
 }
+function cubicHermiteToBezier({ P0, P1, T0, T1 }) {
+  // Bezier from Hermite with tangents T0 (at P0) and T1 (at P1)
+  const c1x = P0.x + T0.dx / 3;
+  const c1y = P0.y + T0.dy / 3;
+  const c2x = P1.x - T1.dx / 3;
+  const c2y = P1.y - T1.dy / 3;
+  return `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${P1.x} ${P1.y}`;
+}
+function svgArcQuarterish(from, to, preferRight = true) {
+  // Use an SVG arc so it feels like a quarter circle.
+  // If from.x==to.x or from.y==to.y it may not look quarter-circle, but with our P2 offset it should.
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const r = Math.max(Math.abs(dx), Math.abs(dy)) || 1;
 
-// --- 4) Compute tangents ---
-// Points in order:
-const P0 = { x: frontNeckPointX, y: frontNeckPointY };                  // Step 13 meeting point
-const P1 = { x: fPointX, y: fPointY };                                  // Step 14 Point F
-const P2 = { x: flatBeforeBasePointX, y: flatBeforeBasePointY };        // flat tangent here (horizontal)
-const P3 = { x: baseFrontNeckX, y: baseFrontNeckY };                      // base front neck
+  // Sweep flag: choose direction to keep curve outward.
+  // If preferRight, we commonly want sweep=1; otherwise sweep=0.
+  const sweep = preferRight ? 1 : 0;
 
-// Tangent at P0: perpendicular to shoulder (enforced)
+  // large-arc-flag: 0 for quarter-ish
+  return `A ${r} ${r} 0 0 ${sweep} ${to.x} ${to.y}`;
+}
+
+bodiceGroup.querySelectorAll(`.french-front-neck-curve`).forEach(el => el.remove());
+
+// Tangent at P0 perpendicular to shoulder
 const P0Dir = normDir(startTangentDir.dx, startTangentDir.dy);
+
+// Smooth into the “arc region”: cubic P0->P1
 const T0 = scaleTangentByDistance(P0Dir, P0, P1, 0.45);
 
-// Tangent at P1: average of adjacent directions (smooth, reduces cink)
+// choose tangent at P1 as blend toward P2
 const dirIn1 = normDir(P1.x - P0.x, P1.y - P0.y);
 const dirOut1 = normDir(P2.x - P1.x, P2.y - P1.y);
 const avg1 = normDir(dirIn1.dx + dirOut1.dx, dirIn1.dy + dirOut1.dy);
 const T1 = scaleTangentByDistance(avg1, P1, P2, 0.35);
 
-// Tangent at flat point P2: horizontal (dy = 0)
-const flatDir = { dx: 1, dy: 0 }; // choose +x; direction sign doesn’t affect “horizontal”
-const T2 = scaleTangentByDistance(flatDir, P2, P3, 0.40);
-
-// Tangent at base point P3: horizontal too (keeps it smooth into the base)
-const T3 = scaleTangentByDistance(flatDir, P3, P2, 0.25);
-
-// --- 5) Draw 3 bezier segments: P0->P1, P1->P2, P2->P3 ---
-bodiceGroup.querySelectorAll(`.french-front-neck-curve`).forEach(el => el.remove());
-
-const d =
+// Then use an arc-like segment from P1 -> P2 (quarter-ish), and a short cubic/arc to P3
+// We will do: cubic P1->P2 with curvature + arc P2->P3.
+// For “almost quarter circle”, the main visual quarter is P1->P2.
+const pathD =
   `M ${P0.x} ${P0.y} ` +
-  cubicHermiteToBezierPath({ P0, P1, T0, T1 }) + ' ' +
-  cubicHermiteToBezierPath({ P0: P1, P1: P2, T0: T1, T1: T2 }) + ' ' +
-  cubicHermiteToBezierPath({ P0: P2, P1: P3, T0: T2, T1: T3 });
+  cubicHermiteToBezier({ P0, P1, T0, T1 }) + ' ' +
+  // Arc from P1 to P2
+  svgArcQuarterish(P1, P2, true) + ' ' +
+  // Final small arc/cubic to base to keep it smooth (use a gentle arc)
+  svgArcQuarterish(P2, P3, true);
 
+// Create path
 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 path.setAttribute('class', 'french-front-neck-curve');
 path.setAttribute('fill', 'none');
@@ -3046,10 +3053,9 @@ path.setAttribute('stroke', '#9333ea');
 path.setAttribute('stroke-width', 2.4);
 path.setAttribute('stroke-linecap', 'round');
 path.setAttribute('stroke-linejoin', 'round');
-path.setAttribute('d', d);
+path.setAttribute('d', pathD);
 
 bodiceGroup.appendChild(path);
-
 
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
