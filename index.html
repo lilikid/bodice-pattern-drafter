@@ -2954,57 +2954,39 @@ drawSplineThroughPoints({
 });
 
 
-// ===================== More “French-curve” smooth Front Neck =====================
-// Changes vs previous:
-// 1) Add TWO extra points on the flat (P2a, P2b) instead of a single sharp “start-of-flat”.
-// 2) Keep all flat tangents horizontal, but spread the transition across more span.
-// 3) Reduce tangent magnitudes around the flat to avoid overshoot/distortion.
+// ===================== French-curve neck with short horizontal near base =====================
+// Produces:
+// - smooth French-curve from neck meet (P0) to a “flat start” point (P2)
+// - an actual short horizontal segment near the base (P2 -> P3)
+// - no outside bulge (P2 moved inward toward CF)
 
 bodiceGroup.querySelectorAll(`.french-front-neck-curve`).forEach(el => el.remove());
 
-// --- 0) Shoulder direction (Front Neck -> Point S) ---
+// --- 0) Shoulder perpendicular direction (tangent at P0) ---
 const dxS_local = pointSX - frontNeckPointX;
 const dyS_local = pointSY - frontNeckPointY;
 const distS_local = Math.hypot(dxS_local, dyS_local) || 1;
 const unitDxS_local = dxS_local / distS_local;
 const unitDyS_local = dyS_local / distS_local;
 
-// Perpendicular directions (±90°)
-const perp1 = { dx: -unitDyS_local, dy: unitDxS_local };
+const perp1 = { dx: -unitDyS_local, dy:  unitDxS_local };
 const perp2 = { dx:  unitDyS_local, dy: -unitDxS_local };
-
-// Pick the perpendicular that goes downward in SVG (positive dy)
 const startTangentDir = (perp1.dy >= perp2.dy) ? perp1 : perp2;
 
-// --- 1) Flat length in pixels ---
-const flatCm = 1.5; // change to 1.0 if you want ~1cm
-const flatIn = flatCm / 2.54;
-const flatPx = flatIn * scaleFactor;
+// --- 1) Flat length near base (horizontal) ---
+const flatCm = 1.2; // try 1.0–1.5cm
+const flatPx = (flatCm / 2.54) * scaleFactor;
 
-// extra split of the flat to make it feel “drawn”
-const flatSplitA = 0.55; // P2a is ~55% along the flat segment
-const flatSplitB = 0.85; // P2b is ~85% along the flat segment
-
-// --- 2) Points ---
-// P0: meet point (frontNeckPoint)
-// P1: point F
-// P3: baseFrontNeck
-const P0 = { x: frontNeckPointX, y: frontNeckPointY };
-const P1 = { x: fPointX,          y: fPointY };
-const P3 = { x: baseFrontNeckX,  y: baseFrontNeckY };
-
-// Move P2* inward toward CF interior by ~flatPx
+// If shoulder goes to the right, the CF interior is usually left; choose sign so P2 moves inward.
 const insideSign = (pointSX > frontNeckPointX) ? 1 : -1;
 
-// P2a: start of flat (same y as base)
-const P2a = {
-  x: baseFrontNeckX + insideSign * (flatPx * flatSplitA),
-  y: baseFrontNeckY
-};
+// --- 2) Points ---
+const P0 = { x: frontNeckPointX, y: frontNeckPointY };         // meet point
+const P1 = { x: fPointX,         y: fPointY };                 // shoulder point
 
-// P2b: end of flat near the base (still same y as base)
-const P2b = {
-  x: baseFrontNeckX + insideSign * (flatPx * flatSplitB),
+const P3 = { x: baseFrontNeckX, y: baseFrontNeckY };           // base neck point (end)
+const P2 = {                                                     // flat start (inward)
+  x: baseFrontNeckX + insideSign * flatPx,
   y: baseFrontNeckY
 };
 
@@ -3013,13 +2995,15 @@ function normDir(dx, dy) {
   const L = Math.hypot(dx, dy) || 1;
   return { dx: dx / L, dy: dy / L };
 }
-
 function scaleTangentByDistance(dir, fromP, toP, factor) {
   const d = Math.hypot(toP.x - fromP.x, toP.y - fromP.y) || 1;
   return { dx: dir.dx * d * factor, dy: dir.dy * d * factor };
 }
-
-function cubicHermiteToBezier({ P0, P1, T0, T1 }) {
+function cubicFromHermite({ P0, P1, T0, T1 }) {
+  // cubic Bezier where:
+  // - start point: P0
+  // - end point: P1
+  // - tangents at ends: T0 at P0, T1 at P1
   const c1x = P0.x + T0.dx / 3;
   const c1y = P0.y + T0.dy / 3;
   const c2x = P1.x - T1.dx / 3;
@@ -3027,41 +3011,36 @@ function cubicHermiteToBezier({ P0, P1, T0, T1 }) {
   return `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${P1.x} ${P1.y}`;
 }
 
-// --- 4) Tangents (key smoothing) ---
+// --- 4) Tangents ---
 // Tangent at P0: perpendicular to shoulder
 const P0Dir = normDir(startTangentDir.dx, startTangentDir.dy);
-const T0 = scaleTangentByDistance(P0Dir, P0, P1, 0.35);
+const T0 = scaleTangentByDistance(P0Dir, P0, P1, 0.55);
 
-// Tangent at P1: blend into flat-start direction, but with lower magnitude (smoother)
-const dirIn1  = normDir(P1.x - P0.x, P1.y - P0.y);
-const dirOut1 = normDir(P2a.x - P1.x, P2a.y - P1.y);
-const avg1 = normDir(dirIn1.dx + dirOut1.dx, dirIn1.dy + dirOut1.dy);
-const T1 = scaleTangentByDistance(avg1, P1, P2a, 0.22);
-
-// Flat tangents: strictly horizontal (no outside bulge)
-// Use smaller magnitudes on the flat to avoid curve “kinks” and distortion.
+// Tangent at P2: MUST be horizontal (smooth join to the horizontal segment)
 const flatDir = { dx: 1, dy: 0 };
+const T2 = scaleTangentByDistance(flatDir, P2, P3, 0.45);
 
-// Tangent at P2a (shared between segment P1->P2a and P2a->P2b)
-const T2a = scaleTangentByDistance(flatDir, P2a, P2b, 0.18);
+// ===== Segment A: P0 -> P2 (French curve), with tangent at P2 horizontal =====
+// Set tangent at P2 horizontal; for cubic Hermite we need tangent at P0 and at P2.
+// We also want it to “lean” smoothly from shoulder: use a mild blend by shifting T0 magnitude via P1.
+// (This keeps it quarter-circle-like rather than angular.)
+const pathA = cubicFromHermite({ P0, P1: P2, T0, T1: T2 });
 
-// Tangent at P2b (shared between segment P2a->P2b and P2b->P3)
-const T2b = scaleTangentByDistance(flatDir, P2b, P3, 0.14);
+// ===== Segment B: P2 -> P3 (actual horizontal line) =====
+// To make it an exact horizontal straight segment, force both cubic control points y == base y.
+// Let start and end be P2 and P3, with dy=0.
+const yFlat = P3.y;
+// Choose control points along the flat direction for smooth curvature (but since all y are equal, it's straight)
+const lenFlat = Math.hypot(P3.x - P2.x, P3.y - P2.y) || 1;
+const cpOffset = lenFlat * 0.33;
 
-// Tangent at P3 (base), also horizontal
-const T3 = scaleTangentByDistance(flatDir, P3, P2b, 0.10);
+const c1 = { x: P2.x + insideSign * cpOffset, y: yFlat };
+const c2 = { x: P3.x - insideSign * cpOffset, y: yFlat };
 
-// --- 5) Build segments (P0->P1->P2a->P2b->P3) ---
-// Segment 1: P0->P1
-// Segment 2: P1->P2a
-// Segment 3: P2a->P2b
-// Segment 4: P2b->P3
-const pathD =
-  `M ${P0.x} ${P0.y} ` +
-  cubicHermiteToBezier({ P0,  P1,  T0,   T1 }) + ' ' +
-  cubicHermiteToBezier({ P0: P1, P1: P2a, T0: T1,   T1: T2a }) + ' ' +
-  cubicHermiteToBezier({ P0: P2a, P1: P2b, T0: T2a,  T1: T2b }) + ' ' +
-  cubicHermiteToBezier({ P0: P2b, P1: P3,  T0: T2b,  T1: T3 });
+const pathB = `C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${P3.x} ${P3.y}`;
+
+// --- 5) Build path ---
+const pathD = `M ${P0.x} ${P0.y} ${pathA} ${pathB}`;
 
 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 path.setAttribute('class', 'french-front-neck-curve');
@@ -3073,7 +3052,6 @@ path.setAttribute('stroke-linejoin', 'round');
 path.setAttribute('d', pathD);
 
 bodiceGroup.appendChild(path);
-
 
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
