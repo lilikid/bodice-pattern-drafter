@@ -2954,16 +2954,15 @@ drawSplineThroughPoints({
 });
 
 
-// ===================== Smooth Front Neck curve (no outside bulge at base) =====================
-// Strategy:
-// 1) Build a smooth 3-part cubic spline (P0->P1->P2->P3)
-// 2) Enforce: tangent at P0 is perpendicular to shoulder
-// 3) Enforce: tangent becomes horizontal at P2 (the “flatten” region) ~1.5cm before base
-// 4) Keep the base from bulging outside by moving the “flatten” point back toward CF
-//    (i.e., toward the bodice interior), then blending with tangents.
+// ===================== Smooth Front Neck curve (flat ~1–1.5cm near base) =====================
+// Key change:
+// - Force an actual "flat" (horizontal) portion by setting the start-of-flat point (P2)
+//   to the SAME Y as the base neck point (P3), and move it inward by ~1–1.5cm.
+// - Then set tangents at both P2 and P3 to be horizontal, which prevents distortion/bulge.
 
+bodiceGroup.querySelectorAll(`.french-front-neck-curve`).forEach(el => el.remove());
 
-// --- 0) Shoulder direction (Front Neck -> Point S), local vars to avoid redeclare ---
+// --- 0) Shoulder direction (Front Neck -> Point S), local vars ---
 const dxS_local = pointSX - frontNeckPointX;
 const dyS_local = pointSY - frontNeckPointY;
 const distS_local = Math.hypot(dxS_local, dyS_local) || 1;
@@ -2977,32 +2976,29 @@ const perp2 = { dx:  unitDyS_local, dy: -unitDxS_local };
 // Pick the perpendicular that goes downward in SVG (positive dy)
 const startTangentDir = (perp1.dy >= perp2.dy) ? perp1 : perp2;
 
-
-// --- 1) 1.5cm in pixels ---
-const neckCm = 1.5;
-const neckIn = neckCm / 2.54;
-const neckPx = neckIn * scaleFactor;
-
+// --- 1) Flat length in pixels (use 1.5cm; change to 1.0 if you prefer) ---
+const flatCm = 1.5; // <= change to 1.0 if you want ~1cm flat
+const flatIn = flatCm / 2.54;
+const flatPx = flatIn * scaleFactor;
 
 // --- 2) Points ---
 // P0: meet point (frontNeckPoint)
-// P1: Point F
-// P2: flatten point ~1.5cm before base, with tangent horizontal
+// P1: point F (shoulder blend)
+// P2: start of the flat (INWARD, same Y as base)  => creates the “french curve flat”
 // P3: baseFrontNeck
 const P0 = { x: frontNeckPointX, y: frontNeckPointY };
 const P1 = { x: fPointX,         y: fPointY };
 const P3 = { x: baseFrontNeckX, y: baseFrontNeckY };
 
-// Move P2 horizontally back toward CF (bodice interior) to avoid outside bulge.
-// If shoulder slopes to the right (pointSX > frontNeckPointX), interior is likely left => use -neckPx.
-// Otherwise use +neckPx.
+// Move P2 inward (toward CF interior) by ~flatPx while keeping y == baseFrontNeckY
+// If shoulder slopes to the right (pointSX > frontNeckPointX), interior likely left => -flatPx
 const insideSign = (pointSX > frontNeckPointX) ? 1 : -1;
 
+// P2 is the start of the horizontal segment, at the same height as the base
 const P2 = {
-  x: baseFrontNeckX + insideSign * neckPx,
-  y: baseFrontNeckY - neckPx
+  x: baseFrontNeckX + insideSign * flatPx,
+  y: baseFrontNeckY
 };
-
 
 // --- 3) Helpers ---
 function normDir(dx, dy) {
@@ -3024,27 +3020,23 @@ function cubicHermiteToBezier({ P0, P1, T0, T1 }) {
   return `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${P1.x} ${P1.y}`;
 }
 
-bodiceGroup.querySelectorAll(`.french-front-neck-curve`).forEach(el => el.remove());
-
-
-// --- 4) Tangents (smooth / no kink) ---
+// --- 4) Tangents (smooth + flat) ---
 // Tangent at P0: perpendicular to shoulder
 const P0Dir = normDir(startTangentDir.dx, startTangentDir.dy);
 const T0 = scaleTangentByDistance(P0Dir, P0, P1, 0.45);
 
 // Tangent at P1: blend directions P0->P1 and P1->P2
-const dirIn1 = normDir(P1.x - P0.x, P1.y - P0.y);
+const dirIn1  = normDir(P1.x - P0.x, P1.y - P0.y);
 const dirOut1 = normDir(P2.x - P1.x, P2.y - P1.y);
 const avg1 = normDir(dirIn1.dx + dirOut1.dx, dirIn1.dy + dirOut1.dy);
 const T1 = scaleTangentByDistance(avg1, P1, P2, 0.35);
 
-// Tangent at P2: horizontal flattening (dy = 0)
-const flatDir = { dx: 1, dy: 0 }; // direction sign doesn't matter for “horizontal”
-const T2 = scaleTangentByDistance(flatDir, P2, P3, 0.40);
+// Tangent at P2: horizontal (dy = 0) and aligned with flat
+const flatDir = { dx: 1, dy: 0 };
+const T2 = scaleTangentByDistance(flatDir, P2, P3, 0.45);
 
-// Tangent at P3: keep it horizontal too to avoid “curling outward” at the base
+// Tangent at P3: also horizontal to avoid “curling outward” at the base
 const T3 = scaleTangentByDistance(flatDir, P3, P2, 0.25);
-
 
 // --- 5) Build 3 cubic segments: P0->P1, P1->P2, P2->P3 ---
 const pathD =
@@ -3063,7 +3055,6 @@ path.setAttribute('stroke-linejoin', 'round');
 path.setAttribute('d', pathD);
 
 bodiceGroup.appendChild(path);
-
 
             // --- 2. SLEEVE BLOCK ---
             const hasSleeve = document.getElementById('includeSleeve').value === 'yes';
