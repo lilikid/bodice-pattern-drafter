@@ -2955,31 +2955,32 @@ drawSplineThroughPoints({
 
 
 // ===================== Corrected Front Neck curve (90° to slanted shoulder) =====================
+// NOTE: Avoids redeclaring dxS/dyS (Step 15 already declares const dxS/dyS).
 
-// 1) Shoulder direction (Front Neck -> Point S)
-const dxS = pointSX - frontNeckPointX;
-const dyS = pointSY - frontNeckPointY;
-const distS = Math.hypot(dxS, dyS) || 1;
-const unitDxS = dxS / distS;
-const unitDyS = dyS / distS;
+// 1) Shoulder direction (Front Neck -> Point S) — use renamed locals
+const dxS_local = pointSX - frontNeckPointX;
+const dyS_local = pointSY - frontNeckPointY;
+const distS_local = Math.hypot(dxS_local, dyS_local) || 1;
+const unitDxS_local = dxS_local / distS_local;
+const unitDyS_local = dyS_local / distS_local;
 
 // 2) Perpendicular directions (rotate ±90°)
-const perp1 = { dx: -unitDyS, dy: unitDxS }; // +90°
-const perp2 = { dx: unitDyS, dy: -unitDxS }; // -90°
+const perp1 = { dx: -unitDyS_local, dy: unitDxS_local }; // +90°
+const perp2 = { dx:  unitDyS_local, dy: -unitDxS_local }; // -90°
 
 // 3) Pick the perpendicular that points downward in SVG (positive dy)
 const startTangentDir = (perp1.dy >= perp2.dy) ? perp1 : perp2;
 
 // 4) Straight section length: 1.5 cm
 const neckStraightCm = 1.5;
-const neckStraightInches = neckStraightCm / 2.54;     // cm -> inches
-const neckStraightPixels = neckStraightInches * scaleFactor; // pixels
+const neckStraightInches = neckStraightCm / 2.54;      // cm -> inches
+const neckStraightPixels = neckStraightInches * scaleFactor;
 
 // 5) Straight endpoint after 1.5 cm
 const straightEndX = frontNeckPointX + startTangentDir.dx * neckStraightPixels;
 const straightEndY = frontNeckPointY + startTangentDir.dy * neckStraightPixels;
 
-// 6) Draw: Start at Front Neck (Step 13), go straight 1.5cm, then spline through fPoint -> baseFrontNeck
+// 6) Helper: draw spline, enforcing tangent at Step 13
 function drawConstrainedSplineThroughPoints({
   className,
   stroke,
@@ -3044,11 +3045,12 @@ drawConstrainedSplineThroughPoints({
   points: [
     { x: frontNeckPointX, y: frontNeckPointY }, // meet at 90° (tangent at this point)
     { x: straightEndX,   y: straightEndY },   // straight 1.5 cm
-    { x: fPointX,         y: fPointY },         // Step 14 Point F
-    { x: baseFrontNeckX,  y: baseFrontNeckY }  // base front neck
+    { x: fPointX,         y: fPointY },       // Step 14 Point F
+    { x: baseFrontNeckX,  y: baseFrontNeckY } // base front neck
   ],
   startTangentDir
 });
+
 
 
             // --- 2. SLEEVE BLOCK ---
