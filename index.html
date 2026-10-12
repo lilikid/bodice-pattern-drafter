@@ -2996,7 +2996,7 @@ const P3 = { x: baseFrontNeckX, y: baseFrontNeckY };
 // Move P2 horizontally back toward CF (bodice interior) to avoid outside bulge.
 // If shoulder slopes to the right (pointSX > frontNeckPointX), interior is likely left => use -neckPx.
 // Otherwise use +neckPx.
-const insideSign = (pointSX > frontNeckPointX) ? -1 : 1;
+const insideSign = (pointSX > frontNeckPointX) ? 1 : -1;
 
 const P2 = {
   x: baseFrontNeckX + insideSign * neckPx,
