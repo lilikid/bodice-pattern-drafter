@@ -2954,61 +2954,68 @@ drawSplineThroughPoints({
 });
 
 
-// ===================== 3) Front Neck curve (smooth, more down below F, then flatter at base) =====================
+// ===================== 3) Front Neck curve (smooth, no corners) =====================
+// Build TWO cubic Beziers:
+//   Segment A: frontNeckPoint -> F
+//   Segment B: F -> baseFrontNeck
+// Ensure smoothness by forcing the tangent at F to be the same for both segments.
 
 const dirX = Math.sign(baseFrontNeckX - fPointX) || 1;
 
-// Tuning knobs
-const dipCm = 1.05;           // how far DOWN below F
-const dipPx = (dipCm / 2.54) * scaleFactor;
+// Points
+const P0 = { x: frontNeckPointX, y: frontNeckPointY };
+const PF = { x: fPointX,         y: fPointY };
+const P3 = { x: baseFrontNeckX,  y: baseFrontNeckY };
 
-const sideSwellCm = 0.35;    // small inward/outward bowing direction near F
-const sideSwellPx = (sideSwellCm / 2.54) * scaleFactor;
+// ---- Tangents (control curvature) ----
+// At base: flatter toward base => tangent ~ horizontal
+const T_base = { dx: 1, dy: 0 };
 
-const pointsCount = 10;      // more points => smoother
-const x0 = frontNeckPointX, y0 = frontNeckPointY; // start
-const xF = fPointX,         yF = fPointY;        // F
-const xB = baseFrontNeckX, yB = baseFrontNeckY;  // base
+// At start: leave shoulder naturally => tangent along “perpendicular to CF direction” is not available here.
+// We'll approximate using direction from P0 toward PF, but slightly rotated to look like neck curve.
+let dxStart = PF.x - P0.x;
+let dyStart = PF.y - P0.y;
+const Ls = Math.hypot(dxStart, dyStart) || 1;
+dxStart /= Ls; dyStart /= Ls;
 
-// Build smooth curve from frontNeck -> F -> base with a “dip” just after F
-const curvePoints = [];
-curvePoints.push({ x: x0, y: y0 });
+// At F: “curvy down below F” => tangent points downward and toward the base side
+// (this is what eliminates the cornery feeling)
+let T_F = { dx: dirX * 0.55 + dxStart * 0.45, dy: 0.95 }; // dy>0 pushes curve down
+const Lf = Math.hypot(T_F.dx, T_F.dy) || 1;
+T_F = { dx: T_F.dx / Lf, dy: T_F.dy / Lf };
 
-// We'll create points from F(0) to base(1), then prepend the segment from start to F smoothly by spline via included points.
-for (let i = 0; i <= pointsCount; i++) {
-  const t = i / pointsCount; // 0..1 where 0 at F, 1 at base
+// Scale tangent lengths (affects how round it is)
+const lenA = Math.hypot(PF.x - P0.x, PF.y - P0.y) || 1;
+const lenB = Math.hypot(P3.x - PF.x, P3.y - PF.y) || 1;
 
-  // Smooth progression for x toward base
-  const x = xF + (xB - xF) * t
-            + dirX * sideSwellPx * Math.sin(Math.PI * t) * (1 - t); 
-  // ^ sin(pi*t) gives a hump around mid; (1-t) fades near base
+const kStart = 0.45; // larger = more rounded near frontNeckPoint
+const kF     = 0.55; // larger = more aggressive dip below F (down-curving)
+const kBase  = 0.42; // larger = more gradual flattening to base
 
-  // y: start at yF, dip downward shortly after F, then return and flatten to yB
-  // Use a smoothstep curve for return + an extra dip term.
-  const smoothReturn = t * t * (3 - 2 * t); // smoothstep
+const A1 = { x: P0.x + (T_F.dx * 0 + dxStart * lenA * kStart), y: P0.y + (T_F.dy * 0 + dyStart * lenA * kStart) }; // tangent from start
+const C1 = { x: PF.x - T_F.dx * lenA * kF, y: PF.y - T_F.dy * lenA * kF }; // tangent at F for segment A (incoming)
+const C2 = { x: PF.x + T_F.dx * lenB * kF, y: PF.y + T_F.dy * lenB * kF }; // tangent at F for segment B (outgoing; same direction => smooth)
+const B2 = { x: P3.x - T_base.dx * lenB * kBase, y: P3.y - T_base.dy * lenB * kBase };
 
-  // Dip peaks around t ~ 0.25-0.35, fades out by ~0.6
-  const dipShape = Math.sin(Math.PI * t) * Math.sin(Math.PI * t); // keeps it smooth
-  const dipMask = (t < 0.65) ? 1 : 0; // fade later so it flattens by the base
-  const dip = dipPx * dipShape * (0.9 - 0.9 * t) * (dipMask ? 1 : 0);
+// Draw as a single path with two cubic segments
+// Segment A: P0 -> PF with controls (A1, C1)
+// Segment B: PF -> P3 with controls (C2, B2)
+const d =
+  `M ${P0.x} ${P0.y}` +
+  ` C ${A1.x} ${A1.y}, ${C1.x} ${C1.y}, ${PF.x} ${PF.y}` +
+  ` C ${C2.x} ${C2.y}, ${B2.x} ${B2.y}, ${P3.x} ${P3.y}`;
 
-  const y = yF + (yB - yF) * smoothReturn + dip;
+const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+pathEl.setAttribute('class', 'french-front-neck-curve');
+pathEl.setAttribute('fill', 'none');
+pathEl.setAttribute('stroke', '#9333ea');
+pathEl.setAttribute('stroke-width', '2.4');
+pathEl.setAttribute('stroke-linecap', 'round');
+pathEl.setAttribute('stroke-linejoin', 'round');
+pathEl.setAttribute('d', d);
 
-  curvePoints.push({ x, y });
-}
-
-// Ensure we have exact F and exact base in sequence
-// (optional but helps avoid tiny numerical drift)
-curvePoints[1] = { x: xF, y: yF };
-curvePoints[curvePoints.length - 1] = { x: xB, y: yB };
-
-drawSplineThroughPoints({
-  className: 'french-front-neck-curve',
-  stroke: '#9333ea',
-  strokeWidth: 2.4,
-  points: curvePoints
-});
-
+document.querySelectorAll('.french-front-neck-curve').forEach(n => n.remove());
+bodiceGroup.appendChild(pathEl);
 
 
             // --- 2. SLEEVE BLOCK ---
