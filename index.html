@@ -3041,9 +3041,9 @@ const pathD =
   `M ${P0.x} ${P0.y} ` +
   cubicHermiteToBezier({ P0, P1, T0, T1 }) + ' ' +
   // Arc from P1 to P2
-  svgArcQuarterish(P1, P2, true) + ' ' +
+  svgArcQuarterish(P1, P2, false) + ' ' +
   // Final small arc/cubic to base to keep it smooth (use a gentle arc)
-  svgArcQuarterish(P2, P3, true);
+  svgArcQuarterish(P2, P3, false);
 
 // Create path
 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
